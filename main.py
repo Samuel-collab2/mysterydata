@@ -1,17 +1,21 @@
 from os import mkdir
 from os.path import join
+from itertools import combinations
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
+
 import loaddata_lab6 as loader
 
 
-TRAIN_DATASET_PATH = 'trainingset.csv'
-TEST_DATASET_PATH = 'testset.csv'
+MIN_REAL_FEATURE_UNIQUE_VALUES = 20
+DATASET_TRAIN_RATIO = 0.8
 DATASET_LABEL = 'ClaimAmount'
-TRAIN_FACTOR = 0.8
+DATASET_TRAIN_PATH = 'trainingset.csv'
+DATASET_TEST_PATH = 'testset.csv'
 OUTPUT_DIR = 'dist'
 try:
     mkdir(OUTPUT_DIR)
@@ -44,10 +48,19 @@ def handle_basic_plots(data):
     X, y = split_data_label(data, label=DATASET_LABEL)
     for column in X.columns:
         x = X.loc[:, column]
-        if data[column].nunique() < 20:
-            plot_hist(x, bins=data[column].nunique(), feature_name=column)
+        num_column_unique_values = data[column].nunique()
+        if num_column_unique_values < MIN_REAL_FEATURE_UNIQUE_VALUES:
+            plot_hist(x, bins=num_column_unique_values, feature_name=column)
         else:
             plot_scatter(x, y, feature_name=column)
+
+def handle_compound_plots(data):
+    X, y = split_data_label(data, label=DATASET_LABEL)
+    for column1, column2 in combinations(X.columns, r=2):
+        x1 = X.loc[:, column1]
+        x2 = X.loc[:, column2]
+        x = x1 / x2
+        plot_scatter(x, y, feature_name=f'{column1}-{column2}')
 
 def plot_scatter(x, y, feature_name):
     fig, ax = plt.subplots()
@@ -74,13 +87,15 @@ def plot_hist(x, bins, feature_name):
     print(f'Wrote histogram to {fig_path}')
 
 def main():
-    data_condensed = pd.read_csv(TRAIN_DATASET_PATH)
-    data_expanded = load_dataset(TRAIN_DATASET_PATH)
+    data_condensed = pd.read_csv(DATASET_TRAIN_PATH)
+    data_expanded = load_dataset(DATASET_TRAIN_PATH)
+
     handle_basic_plots(data_condensed)
+    handle_compound_plots(data_condensed)
 
     data_split = split_data(data_expanded,
         label=DATASET_LABEL,
-        train_factor=TRAIN_FACTOR)
+        train_factor=DATASET_TRAIN_RATIO)
     handle_linear_regression(data_split)
 
 if __name__ == '__main__':
