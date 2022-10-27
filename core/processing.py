@@ -26,7 +26,7 @@ def split_training_test(features, label, train_factor):
 def split_claims_accept_reject(features, label):
     accept_indices = label[label != 0].index
     reject_indices = label[label == 0].index
-    return (features.iloc[accept_indices], label.iloc[accept_indices]), (features.iloc[reject_indices], label.iloc[reject_indices]),
+    return (features.iloc[accept_indices], label.iloc[accept_indices]), (features.iloc[reject_indices], label.iloc[reject_indices])
 
 def is_categorical_column(column):
     return column.dtype == 'object' or column.nunique() < MIN_REAL_FEATURE_UNIQUE_VALUES
