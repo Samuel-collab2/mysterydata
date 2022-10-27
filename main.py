@@ -1,9 +1,11 @@
 from core.loader import load_train_dataset
-from core.processing import expand_dataset, split_training_test, split_claims_accept_reject, separate_features_label
+from core.preprocessing import expand_dataset, split_training_test, split_claims_accept_reject, separate_features_label
 from core.data_visualization import handle_basic_plots, handle_compound_plots
 from core.constants import DATASET_LABEL_NAME, DATASET_TRAIN_RATIO, POLYNOMIAL_ANALYSIS_DEGREES, CROSS_VALIDATION_SETS
 from core.data_analysis import calculate_linear_regression_error, calculate_polynomial_complexity_errors
 from library.option_input import OptionInput
+from main_induction import perform_decision_tree_induction
+
 
 def run_menu(options):
     exit_menu = None
@@ -11,7 +13,9 @@ def run_menu(options):
         print('--- Insurance Claim Model Menu ---')
         input = OptionInput('Select Option', options, lambda option: option[0])
         _, option = input.get_input()
+        print()
         exit_menu = option()
+        print()
 
 def generate_data_plots(features, label):
     handle_basic_plots(features, label)
@@ -54,9 +58,10 @@ def main():
 
     run_menu([
         ('Run dev test', lambda: run_dev_test(raw_data, train_data, test_data)),
-        ('Generate Data Plots', lambda: generate_data_plots(raw_features, raw_label)),
-        ('Perform Data Analysis', lambda: perform_model_analysis(train_data, test_data)),
-        ('Exit', lambda: True)
+        ('Generate data plots', lambda: generate_data_plots(raw_features, raw_label)),
+        ('Perform data analysis', lambda: perform_model_analysis(train_data, test_data)),
+        ('Perform decision tree induction', lambda: perform_decision_tree_induction(dataset_raw)),
+        ('Exit', lambda: True),
     ])
 
 

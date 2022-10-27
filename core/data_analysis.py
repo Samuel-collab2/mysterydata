@@ -1,7 +1,7 @@
 import numpy as np
 from sklearn.metrics import mean_absolute_error
 
-from core.processing import enumerate_cross_validation_sets
+from core.preprocessing import enumerate_cross_validation_sets
 from core.model_regression import train_linear_regression, train_polynomial_regression
 
 def cross_validate_model(train_model, features, label, sets):
