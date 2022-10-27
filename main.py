@@ -30,23 +30,32 @@ def perform_model_analysis(train_data, test_data):
         print(f'|_ Train error: {train_error:.4f}')
         print(f'|_ Validation error: {cv_error:.4f}')
 
+def run_dev_test(raw_data, train_data, test_data):
+    # Intended for temporary development tests
+    # Run whatever you want here
+    pass
+
 def main():
     dataset_raw = load_train_dataset()
-    raw_features, raw_label = separate_features_label(dataset_raw, DATASET_LABEL_NAME)
+    raw_data = separate_features_label(dataset_raw, DATASET_LABEL_NAME)
+    raw_features, raw_label = raw_data
 
     dataset = expand_dataset(dataset_raw)
     features, label = separate_features_label(dataset, DATASET_LABEL_NAME)
 
     accept_data, _ = split_claims_accept_reject(features, label)
+    accept_features, accept_label = accept_data
 
-    train_accept_data, test_accept_data = split_training_test(
-        *accept_data,
+    train_data, test_data = split_training_test(
+        accept_features,
+        accept_label,
         train_factor=DATASET_TRAIN_RATIO,
     )
 
     run_menu([
+        ('Run dev test', lambda: run_dev_test(raw_data, train_data, test_data)),
         ('Generate Data Plots', lambda: generate_data_plots(raw_features, raw_label)),
-        ('Perform Data Analysis', lambda: perform_model_analysis(train_accept_data, test_accept_data)),
+        ('Perform Data Analysis', lambda: perform_model_analysis(train_data, test_data)),
         ('Exit', lambda: True)
     ])
 
