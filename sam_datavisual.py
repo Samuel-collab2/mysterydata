@@ -21,7 +21,7 @@ print(data[data.columns[19]])
 types_of_graphs = ['scatter', 'line', 'bar', 'hist']
 
 # Plot all features against each other with graph type specified in argument on line 59 (plt.savefig(...))
-# Takes avg ~ min's to finish running
+# Takes avg ~ 15s to finish running
 for i in range(1, 20):
     for j in range((i + 1), 21):
 
