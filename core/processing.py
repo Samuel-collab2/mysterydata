@@ -1,30 +1,47 @@
 import pandas as pd
-from sklearn.model_selection import train_test_split
-from .constants import MIN_REAL_FEATURE_UNIQUE_VALUES
+from sklearn.model_selection import train_test_split, KFold
 
-def split_dataset_features_label(dataset, label_name):
+from core.constants import MIN_REAL_FEATURE_UNIQUE_VALUES
+
+def enumerate_cross_validation_sets(features, label, sets):
+    kf = KFold(n_splits=sets)
+    for train_indices, valid_indices in kf.split(features, label):
+        yield features.iloc[train_indices], label.iloc[train_indices], features.iloc[valid_indices], label.iloc[valid_indices]
+
+def separate_features_label(dataset, label_column):
     return (
-        dataset.drop(label_name, axis='columns', inplace=False),
-        dataset.loc[:, label_name],
+        dataset.drop(label_column, axis='columns', inplace=False),
+        dataset.loc[:, label_column],
     )
 
-def split_data_training_test(data, train_factor):
-    return train_test_split(*data, train_size=train_factor, shuffle=False)
+def split_training_test(features, label, train_factor):
+    train_features, test_features, train_label, test_label = train_test_split(
+        features,
+        label,
+        train_size=train_factor,
+        shuffle=False
+    )
+    return (train_features, train_label), (test_features, test_label)
+
+def split_claims_accept_reject(features, label):
+    accept_indices = label[label != 0].index
+    reject_indices = label[label == 0].index
+    return (features.iloc[accept_indices], label.iloc[accept_indices]), (features.iloc[reject_indices], label.iloc[reject_indices]),
 
 def is_categorical_column(column):
     return column.dtype == 'object' or column.nunique() < MIN_REAL_FEATURE_UNIQUE_VALUES
 
-def expand_dataset(dataset_raw):
+def expand_dataset(dataset):
     """
     Expands the dataset by splitting each categorical column into many
-    :param dataset_raw: the raw dataset
+    :param dataset: the raw dataset
     :return: the expanded dataset
     """
 
-    categorical_columns = [column for column in dataset_raw.columns
-                           if is_categorical_column(dataset_raw[column])]
+    categorical_columns = [column for column in dataset.columns
+                           if is_categorical_column(dataset[column])]
 
-    data_expanded = pd.get_dummies(dataset_raw,
+    data_expanded = pd.get_dummies(dataset,
                                    columns=categorical_columns,
                                    prefix=categorical_columns)
 
@@ -61,7 +78,7 @@ def expand_dataset(dataset_raw):
 
         return data_columns.index(column_prefix)
 
-    data_columns = list(dataset_raw.columns)
+    data_columns = list(dataset.columns)
     return data_expanded.reindex(
         sorted(data_expanded.columns,
         key=index_column),
