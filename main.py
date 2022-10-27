@@ -1,102 +1,64 @@
-from os import mkdir
-from os.path import join
-from itertools import combinations
+from core.loader import load_train_dataset
+from core.processing import expand_dataset, split_training_test, split_claims_accept_reject, separate_features_label
+from core.data_visualization import handle_basic_plots, handle_compound_plots
+from core.constants import DATASET_LABEL_NAME, DATASET_TRAIN_RATIO, POLYNOMIAL_ANALYSIS_DEGREES, CROSS_VALIDATION_SETS
+from core.data_analysis import calculate_linear_regression_error, calculate_polynomial_complexity_errors
+from library.option_input import OptionInput
 
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LinearRegression
+def run_menu(options):
+    exit_menu = None
+    while not exit_menu:
+        print('--- Insurance Claim Model Menu ---')
+        input = OptionInput('Select Option', options, lambda option: option[0])
+        _, option = input.get_input()
+        exit_menu = option()
 
-import loaddata_lab6 as loader
+def generate_data_plots(features, label):
+    handle_basic_plots(features, label)
+    handle_compound_plots(features, label)
 
+def perform_model_analysis(train_data, test_data):
+    print('Calculating linear regression mae...')
+    linear_regression_mae = calculate_linear_regression_error(*train_data, *test_data)
+    print(f'Linear regression MAE: {linear_regression_mae:.4f}')
 
-MIN_REAL_FEATURE_UNIQUE_VALUES = 20
-DATASET_TRAIN_RATIO = 0.8
-DATASET_LABEL = 'ClaimAmount'
-DATASET_TRAIN_PATH = 'trainingset.csv'
-DATASET_TEST_PATH = 'testset.csv'
-OUTPUT_DIR = 'dist'
-try:
-    mkdir(OUTPUT_DIR)
-except FileExistsError:
+    degrees = range(1, POLYNOMIAL_ANALYSIS_DEGREES + 1)
+    cv_sets = CROSS_VALIDATION_SETS
+    print(f'Calculating polynomial regression mae for degrees={degrees} across {cv_sets} cross-validation sets...')
+    for degree, train_error, cv_error in calculate_polynomial_complexity_errors(*train_data, degrees=degrees, cv_sets=cv_sets):
+        print(f'Polynomial regression degree={degree}')
+        print(f'|_ Train error: {train_error:.4f}')
+        print(f'|_ Validation error: {cv_error:.4f}')
+
+def run_dev_test(raw_data, train_data, test_data):
+    # Intended for temporary development tests
+    # Run whatever you want here
     pass
 
+def main():
+    dataset_raw = load_train_dataset()
+    raw_data = separate_features_label(dataset_raw, DATASET_LABEL_NAME)
+    raw_features, raw_label = raw_data
 
-def load_dataset(file_path):
-    return loader.load(file_path)
+    dataset = expand_dataset(dataset_raw)
+    features, label = separate_features_label(dataset, DATASET_LABEL_NAME)
 
-def split_data_label(data, label):
-    return (
-        data.drop(label, axis='columns', inplace=False),
-        data.loc[:, label],
+    accept_data, _ = split_claims_accept_reject(features, label)
+    accept_features, accept_label = accept_data
+
+    train_data, test_data = split_training_test(
+        accept_features,
+        accept_label,
+        train_factor=DATASET_TRAIN_RATIO,
     )
 
-def split_data(data, label, train_factor):
-    x, y = split_data_label(data, label)
-    return train_test_split(x, y, train_size=train_factor, shuffle=False)
+    run_menu([
+        ('Run dev test', lambda: run_dev_test(raw_data, train_data, test_data)),
+        ('Generate Data Plots', lambda: generate_data_plots(raw_features, raw_label)),
+        ('Perform Data Analysis', lambda: perform_model_analysis(train_data, test_data)),
+        ('Exit', lambda: True)
+    ])
 
-def handle_linear_regression(data_split):
-    train_x, test_x, train_y, test_y = data_split
-    reg_model = LinearRegression()
-    reg_model.fit(train_x, train_y)
-    pred_y = reg_model.predict(test_x)
-    pred_mae = np.mean(np.abs(test_y - pred_y))
-    print(f'Linear regression MAE: {pred_mae:.4f}')
-
-def handle_basic_plots(data):
-    X, y = split_data_label(data, label=DATASET_LABEL)
-    for column in X.columns:
-        x = X.loc[:, column]
-        num_column_unique_values = data[column].nunique()
-        if num_column_unique_values < MIN_REAL_FEATURE_UNIQUE_VALUES:
-            plot_hist(x, bins=num_column_unique_values, feature_name=column)
-        else:
-            plot_scatter(x, y, feature_name=column)
-
-def handle_compound_plots(data):
-    X, y = split_data_label(data, label=DATASET_LABEL)
-    for column1, column2 in combinations(X.columns, r=2):
-        x1 = X.loc[:, column1]
-        x2 = X.loc[:, column2]
-        x = x1 / x2
-        plot_scatter(x, y, feature_name=f'{column1}-{column2}')
-
-def plot_scatter(x, y, feature_name):
-    fig, ax = plt.subplots()
-    ax.scatter(x, y)
-    ax.set_title(f'Scatter plot of {DATASET_LABEL} over {feature_name}')
-    ax.set_xlabel(feature_name)
-    ax.set_ylabel(DATASET_LABEL)
-
-    fig_path = join(OUTPUT_DIR, f'scatter_{feature_name}.png')
-    fig.savefig(fig_path, bbox_inches='tight')
-    plt.close(fig)
-    print(f'Wrote scatter plot to {fig_path}')
-
-def plot_hist(x, bins, feature_name):
-    fig, ax = plt.subplots()
-    ax.hist(x, bins)
-    ax.set_title(f'Histogram of {DATASET_LABEL} over {feature_name}')
-    ax.set_xlabel(feature_name)
-    ax.set_ylabel(DATASET_LABEL)
-
-    fig_path = join(OUTPUT_DIR, f'hist_{feature_name}.png')
-    fig.savefig(fig_path, bbox_inches='tight')
-    plt.close(fig)
-    print(f'Wrote histogram to {fig_path}')
-
-def main():
-    data_condensed = pd.read_csv(DATASET_TRAIN_PATH)
-    data_expanded = load_dataset(DATASET_TRAIN_PATH)
-
-    handle_basic_plots(data_condensed)
-    handle_compound_plots(data_condensed)
-
-    data_split = split_data(data_expanded,
-        label=DATASET_LABEL,
-        train_factor=DATASET_TRAIN_RATIO)
-    handle_linear_regression(data_split)
 
 if __name__ == '__main__':
     main()
