@@ -3,6 +3,9 @@ from sklearn.model_selection import train_test_split, KFold
 
 from core.constants import MIN_REAL_FEATURE_UNIQUE_VALUES
 
+def zip_sort(lead_list, follow_list, comparator=lambda x: x[0], reverse=False):
+    return zip(*sorted(zip(lead_list, follow_list), key=comparator, reverse=reverse))
+
 def enumerate_cross_validation_sets(features, label, sets):
     kf = KFold(n_splits=sets)
     for train_indices, valid_indices in kf.split(features, label):

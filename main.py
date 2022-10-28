@@ -1,63 +1,82 @@
-from core.loader import load_train_dataset
+import sys
+import time
+
+from core.loader import load_train_dataset, load_standardized_train_dataset, load_test_dataset
 from core.processing import expand_dataset, split_training_test, split_claims_accept_reject, separate_features_label
-from core.data_visualization import handle_basic_plots, handle_compound_plots
-from core.constants import DATASET_LABEL_NAME, DATASET_TRAIN_RATIO, POLYNOMIAL_ANALYSIS_DEGREES, CROSS_VALIDATION_SETS
-from core.data_analysis import calculate_linear_regression_error, calculate_polynomial_complexity_errors
+from core.data_visualization import generate_data_visualization_plots
+from core.constants import DATASET_LABEL_NAME, DATASET_TRAIN_RATIO, MENU_EXIT, MENU_RETURN
+from core.data_analysis import perform_linear_regression_analysis, perform_polynomial_complexity_analysis, \
+    perform_lasso_lambda_analysis, perform_ridge_lambda_analysis, perform_feature_correlation_analysis
 from library.option_input import OptionInput
 
-def run_menu(options):
+def run_menu(title, options):
     exit_menu = None
-    while not exit_menu:
-        print('--- Insurance Claim Model Menu ---')
-        input = OptionInput('Select Option', options, lambda option: option[0])
+    while exit_menu is None:
+        print(f'--- {title} ---')
+        input = OptionInput('Select option', options, lambda option: option[0])
         _, option = input.get_input()
         exit_menu = option()
+    return exit_menu
 
-def generate_data_plots(features, label):
-    handle_basic_plots(features, label)
-    handle_compound_plots(features, label)
-
-def perform_model_analysis(train_data, test_data):
-    print('Calculating linear regression mae...')
-    linear_regression_mae = calculate_linear_regression_error(*train_data, *test_data)
-    print(f'Linear regression MAE: {linear_regression_mae:.4f}')
-
-    degrees = range(1, POLYNOMIAL_ANALYSIS_DEGREES + 1)
-    cv_sets = CROSS_VALIDATION_SETS
-    print(f'Calculating polynomial regression mae for degrees={degrees} across {cv_sets} cross-validation sets...')
-    for degree, train_error, cv_error in calculate_polynomial_complexity_errors(*train_data, degrees=degrees, cv_sets=cv_sets):
-        print(f'Polynomial regression degree={degree}')
-        print(f'|_ Train error: {train_error:.4f}')
-        print(f'|_ Validation error: {cv_error:.4f}')
-
-def run_dev_test(raw_data, train_data, test_data):
-    # Intended for temporary development tests
-    # Run whatever you want here
-    pass
+def run_dataset_menu():
+    return run_menu('Load dataset', [
+        ('Train dataset', load_train_dataset),
+        ('Standardized train dataset', load_standardized_train_dataset),
+        ('Test dataset', load_test_dataset),
+    ])
 
 def main():
-    dataset_raw = load_train_dataset()
+    dataset_raw = run_dataset_menu()
+
     raw_data = separate_features_label(dataset_raw, DATASET_LABEL_NAME)
     raw_features, raw_label = raw_data
 
     dataset = expand_dataset(dataset_raw)
     features, label = separate_features_label(dataset, DATASET_LABEL_NAME)
 
-    accept_data, _ = split_claims_accept_reject(features, label)
+    accept_data, reject_data = split_claims_accept_reject(features, label)
     accept_features, accept_label = accept_data
+    reject_features, reject_label = reject_data
 
-    train_data, test_data = split_training_test(
-        accept_features,
-        accept_label,
-        train_factor=DATASET_TRAIN_RATIO,
-    )
+    def run_dev_test():
+        # Intended for temporary development tests
+        # Run whatever you want here
+        pass
 
-    run_menu([
-        ('Run dev test', lambda: run_dev_test(raw_data, train_data, test_data)),
-        ('Generate Data Plots', lambda: generate_data_plots(raw_features, raw_label)),
-        ('Perform Data Analysis', lambda: perform_model_analysis(train_data, test_data)),
-        ('Exit', lambda: True)
-    ])
+    def analysis_menu(features, label):
+        train_data, test_data = split_training_test(
+            features,
+            label,
+            DATASET_TRAIN_RATIO
+        )
+
+        run_menu('Data Analysis Menu', [
+            ('Perform feature correlation analysis', lambda: perform_feature_correlation_analysis(features)),
+            ('Perform linear regression analysis', lambda: perform_linear_regression_analysis(train_data, test_data)),
+            ('Perform polynomial complexity analysis', lambda: perform_polynomial_complexity_analysis(train_data, test_data)),
+            ('Perform lasso lambda analysis', lambda: perform_lasso_lambda_analysis(train_data, test_data)),
+            ('Perform ridge lambda analysis', lambda: perform_ridge_lambda_analysis(train_data, test_data)),
+            MENU_RETURN
+        ])
+
+    def data_selection_menu(title, next_menu):
+        run_menu(title, [
+            ('Expanded data', lambda: next_menu(features, label)),
+            ('Accepted claim data', lambda: next_menu(accept_features, accept_label)),
+            ('Rejected claim data', lambda: next_menu(reject_features, reject_label)),
+            ('Raw data', lambda: next_menu(raw_features, raw_label)),
+            MENU_RETURN
+        ])
+
+    def main_menu():
+        run_menu('Main Menu', [
+            ('Run dev test', run_dev_test),
+            ('Generate data visualization plots', lambda: generate_data_visualization_plots(raw_features, raw_label)),
+            ('Perform data analysis', lambda: data_selection_menu("Select Analysis Data", analysis_menu)),
+            MENU_EXIT
+        ])
+
+    main_menu()
 
 
 if __name__ == '__main__':
