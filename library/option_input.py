@@ -39,4 +39,4 @@ class OptionInput:
         Displays the options.
         """
         for index in range(0, len(self._options)):
-            print(F'{index + 1}. {self._display_option(self._options[index])}')
+            print(f'{index + 1}. {self._display_option(self._options[index])}')
