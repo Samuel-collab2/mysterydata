@@ -1,3 +1,6 @@
+import sys
+import time
+
 from core.loader import load_train_dataset
 from core.processing import expand_dataset, split_training_test, split_claims_accept_reject, separate_features_label
 from core.data_visualization import handle_basic_plots, handle_compound_plots
@@ -5,19 +8,27 @@ from core.constants import DATASET_LABEL_NAME, DATASET_TRAIN_RATIO, MENU_EXIT, M
 from core.data_analysis import perform_linear_regression_analysis, perform_polynomial_complexity_analysis, perform_lasso_lambda_analysis, perform_ridge_lambda_analysis
 from library.option_input import OptionInput
 
+def menu_delay():
+    """
+    Flushes terminal and waits a bit.
+    """
+    sys.stdout.flush()
+    time.sleep(0.75)
+
 def run_menu(title, options):
     exit_menu = None
     while not exit_menu:
+        menu_delay()
         print(f'--- {title} ---')
         input = OptionInput("Select option", options, lambda option: option[0])
         _, option = input.get_input()
         exit_menu = option()
 
-def generate_data_plots(features, label):
+def generate_data_visualization_plots(features, label):
     handle_basic_plots(features, label)
     handle_compound_plots(features, label)
 
-def perform_model_analysis(train_data, test_data):
+def perform_full_data_analysis(train_data, test_data):
     perform_linear_regression_analysis(train_data, test_data)
     input('Linear regression analysis complete, press any key to continue...')
     perform_polynomial_complexity_analysis(train_data, test_data)
@@ -42,15 +53,6 @@ def main():
     accept_features, accept_label = accept_data
     reject_features, reject_label = reject_data
 
-    def data_selection_menu(title, next_menu):
-        run_menu(title, [
-            ('Expanded processed dataset', lambda: next_menu(features, label)),
-            ('Accepted claim dataset', lambda: next_menu(accept_features, accept_label)),
-            ('Rejected claim dataset', lambda: next_menu(reject_features, reject_label)),
-            ('Raw dataset', lambda: next_menu(raw_features, raw_label)),
-            MENU_RETURN
-        ])
-
     def analysis_menu(features, label):
         train_data, test_data = split_training_test(
             features,
@@ -59,7 +61,7 @@ def main():
         )
 
         run_menu('Data Analysis Menu', [
-            ('Perform all analysis', lambda: perform_model_analysis(train_data, test_data)),
+            ('Perform full analysis', lambda: perform_full_data_analysis(train_data, test_data)),
             ('Perform Linear regression analysis', lambda: perform_linear_regression_analysis(train_data, test_data)),
             ('Perform Polynomial complexity analysis', lambda: perform_polynomial_complexity_analysis(train_data, test_data)),
             ('Perform Lasso lambda analysis', lambda: perform_lasso_lambda_analysis(train_data, test_data)),
@@ -67,10 +69,19 @@ def main():
             MENU_RETURN
         ])
 
+    def data_selection_menu(title, next_menu):
+        run_menu(title, [
+            ('Expanded data', lambda: next_menu(features, label)),
+            ('Accepted claim data', lambda: next_menu(accept_features, accept_label)),
+            ('Rejected claim data', lambda: next_menu(reject_features, reject_label)),
+            ('Raw data', lambda: next_menu(raw_features, raw_label)),
+            MENU_RETURN
+        ])
+
     def main_menu():
         run_menu('Insurance Claim Model Main Menu', [
             ('Run dev test', lambda: run_dev_test()),
-            ('Generate Data Visualization Plots', lambda: generate_data_plots(raw_features, raw_label)),
+            ('Generate Data Visualization Plots', lambda: generate_data_visualization_plots(raw_features, raw_label)),
             ('Perform Data Analysis', lambda: data_selection_menu("Select Analysis Data", analysis_menu)),
             MENU_EXIT
         ])
