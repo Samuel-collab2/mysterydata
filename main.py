@@ -9,17 +9,9 @@ from core.data_analysis import perform_linear_regression_analysis, perform_polyn
     perform_lasso_lambda_analysis, perform_ridge_lambda_analysis, perform_feature_correlation_analysis
 from library.option_input import OptionInput
 
-def menu_delay():
-    """
-    Flushes terminal and waits a bit.
-    """
-    sys.stdout.flush()
-    time.sleep(0.5)
-
 def run_menu(title, options):
     exit_menu = None
     while exit_menu is None:
-        menu_delay()
         print(f'--- {title} ---')
         input = OptionInput('Select option', options, lambda option: option[0])
         _, option = input.get_input()
