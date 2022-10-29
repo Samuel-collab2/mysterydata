@@ -25,11 +25,16 @@ def perform_decision_tree_induction(dataset):
 
     model = train_decision_tree(train_features, train_labels)
     pred_labels = model.predict(test_features)
-
     test_labels = list(test_labels)
+
+    num_rows = len(test_features)
+    num_predicted_accepts = sum(pred_labels)
+    num_observed_accepts = sum(test_labels)
     accuracy = sum([test_labels[i] == y_hat
-        for i, y_hat in enumerate(pred_labels)]) / len(test_features)
-    print(f'Decision tree induction model achieved {accuracy * 100:.2f}% accuracy.')
+        for i, y_hat in enumerate(pred_labels)]) / num_rows
+    print(f'Prediction: {num_predicted_accepts}/{num_rows} claims accepted'
+        f'\nActual:     {num_observed_accepts}/{num_rows} claims accepted'
+        f'\nDecision tree induction model achieved {accuracy * 100:.2f}% accuracy.')
 
 
 if __name__ == '__main__':
