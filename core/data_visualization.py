@@ -5,24 +5,16 @@ from itertools import combinations
 
 from core.constants import MIN_REAL_FEATURE_UNIQUE_VALUES, OUTPUT_DIR
 
-def handle_basic_plots(features, label):
-    for column in features.columns:
-        x = features.loc[:, column]
-        num_column_unique_values = features[column].nunique()
-        if num_column_unique_values < MIN_REAL_FEATURE_UNIQUE_VALUES:
-            plot_hist(x, bins=num_column_unique_values, x_axis=column, y_axis=label.name, file_name=f'hist_{column}')
-        else:
-            plot_scatter(x, label, x_axis=column, y_axis=label.name, file_name=f'scatter_{column}')
+def _write_plot(fig, file):
+    try:
+        mkdir(OUTPUT_DIR)
+    except FileExistsError:
+        pass
 
-def handle_compound_plots(features, label):
-    for column1, column2 in combinations(features.columns, r=2):
-        x1 = features.loc[:, column1]
-        x2 = features.loc[:, column2]
-        x = x1 / x2
+    fig_path = join(OUTPUT_DIR, file)
+    fig.savefig(fig_path, bbox_inches='tight')
 
-        compound_column = f'{column1}-{column2}'
-        plot_scatter(x, label, x_axis=compound_column, y_axis=label.name, file_name=f'scatter_{compound_column}')
-        plot_scatter(x1, x2, x_axis=column1, y_axis=column2, file_name=f'correlation_{compound_column}')
+    print(f'Wrote plot to {fig_path}')
 
 def _create_plot(set_plot, title, x_axis, y_axis, file_name):
     fig, ax = plt.subplots()
@@ -61,13 +53,25 @@ def plot_hist(x, bins, x_axis, y_axis, file_name):
         file_name,
     )
 
-def _write_plot(fig, file):
-    try:
-        mkdir(OUTPUT_DIR)
-    except FileExistsError:
-        pass
+def generate_basic_plots(features, label):
+    for column in features.columns:
+        x = features.loc[:, column]
+        num_column_unique_values = features[column].nunique()
+        if num_column_unique_values < MIN_REAL_FEATURE_UNIQUE_VALUES:
+            plot_hist(x, bins=num_column_unique_values, x_axis=column, y_axis=label.name, file_name=f'hist_{column}')
+        else:
+            plot_scatter(x, label, x_axis=column, y_axis=label.name, file_name=f'scatter_{column}')
 
-    fig_path = join(OUTPUT_DIR, file)
-    fig.savefig(fig_path, bbox_inches='tight')
+def generate_compound_plots(features, label):
+    for column1, column2 in combinations(features.columns, r=2):
+        x1 = features.loc[:, column1]
+        x2 = features.loc[:, column2]
+        x = x1 / x2
 
-    print(f'Wrote plot to {fig_path}')
+        compound_column = f'{column1}-{column2}'
+        plot_scatter(x, label, x_axis=compound_column, y_axis=label.name, file_name=f'scatter_{compound_column}')
+        plot_scatter(x1, x2, x_axis=column1, y_axis=column2, file_name=f'correlation_{compound_column}')
+
+def generate_data_visualization_plots(features, label):
+    generate_basic_plots(features, label)
+    generate_compound_plots(features, label)
