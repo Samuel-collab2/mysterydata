@@ -102,7 +102,7 @@ class BinaryDecisionTreeInduction(NullDecisionTreeInduction):
         if root_entropy == 0:
             # STOPPAGE CRITERIA: perfect classification
             #                    all samples in dataset have the same label value
-            return samples.loc[:, self._dataset_label_name].any()
+            return bool(samples.loc[:, self._dataset_label_name].any())
 
         feature_gains = {feature: self._find_information_gain(
             samples=samples,
@@ -119,10 +119,11 @@ class BinaryDecisionTreeInduction(NullDecisionTreeInduction):
         other_features = [feature for feature in samples.columns if feature != max_feature]
         for feature_value in self._find_feature_values(samples, max_feature):
             child_samples = samples[samples[max_feature] == feature_value].loc[:, other_features]
-            child = self._induce(child_samples, path=(*path, max_feature))
+            child_path = (*path, max_feature)
+            child = self._induce(child_samples, path=child_path)
             self._tree.connect(
-                node1="/".join((*path, max_feature)),
-                node2=child if isinstance(child, str) else bool(child),
+                node1='/'.join(child_path),
+                node2=child,
                 data=feature_value)
 
         return max_feature
@@ -137,22 +138,20 @@ class BinaryDecisionTreeInduction(NullDecisionTreeInduction):
 
     def traverse(self, sample):
         feature = self._tree.nodes[0]
-        node = (feature, (feature,))
+        node = (feature, feature)  # node is column name + column path
 
         while node is not None:
-            feature, parent_path = node
-
-            parent_id = '/'.join(parent_path)
-            feature_value = sample[feature]
+            feature_name, feature_path = node
+            feature_value = sample[feature_name]
 
             child = next((n2 for n1, n2, edge in self._tree.edges
                 if edge == feature_value
-                and n1 == parent_id), None)
+                and n1 == feature_path), None)
 
             if child is None or isinstance(child, bool):
                 return child or False  # assume false if no data is provided
 
-            node = (child, (*parent_path, child))
+            node = (child, f'{feature_path}/{child}')
 
     def predict(self, test_features):
         return [self.traverse(sample)
