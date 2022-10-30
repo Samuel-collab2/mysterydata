@@ -64,6 +64,3 @@ for i in range(1, 20):
 #             plt.savefig("{}/{}_{}vs{}.png".format(OUTPUT_DIR, types_of_graphs[z], x_axis, y_axis))
 #             print("j is now: ", j)
 #         print("i is now: ", i)
-
-
-

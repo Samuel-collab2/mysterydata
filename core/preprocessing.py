@@ -1,6 +1,5 @@
 import pandas as pd
 from sklearn.model_selection import train_test_split, KFold
-
 from core.constants import MIN_REAL_FEATURE_UNIQUE_VALUES
 
 def zip_sort(lead_list, follow_list, comparator=lambda x: x[0], reverse=False):
@@ -17,12 +16,12 @@ def separate_features_label(dataset, label_column):
         dataset.loc[:, label_column],
     )
 
-def split_training_test(features, label, train_factor):
+def split_training_test(features, label, train_factor, shuffle=False):
     train_features, test_features, train_label, test_label = train_test_split(
         features,
         label,
         train_size=train_factor,
-        shuffle=False
+        shuffle=shuffle,
     )
     return (train_features, train_label), (test_features, test_label)
 
@@ -32,7 +31,8 @@ def split_claims_accept_reject(features, label):
     return (features.iloc[accept_indices], label.iloc[accept_indices]), (features.iloc[reject_indices], label.iloc[reject_indices])
 
 def is_categorical_column(column):
-    return column.dtype == 'object' or column.nunique() < MIN_REAL_FEATURE_UNIQUE_VALUES
+    return (column.dtype == 'object'
+        or column.nunique() < MIN_REAL_FEATURE_UNIQUE_VALUES)
 
 def expand_dataset(dataset):
     """

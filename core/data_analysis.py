@@ -7,7 +7,7 @@ from sklearn.metrics import mean_absolute_error
 
 from core.constants import ANALYSIS_LASSO_LAMBDAS, ANALYSIS_RIDGE_LAMBDAS, ANALYSIS_CROSS_VALIDATION_SETS, \
     ANALYSIS_POLYNOMIAL_DEGREES, ANALYSIS_SIGNIFICANT_FEATURE_COUNT, ANALYSIS_CORRELATION_THRESHOLD
-from core.processing import enumerate_cross_validation_sets, zip_sort
+from core.preprocessing import enumerate_cross_validation_sets, zip_sort
 from core.model_regression import train_linear_regression, train_polynomial_regression, train_lasso_regression, train_ridge_regression
 
 def cross_validate_model(train_model, features, label, sets):

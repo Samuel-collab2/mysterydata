@@ -1,21 +1,21 @@
-import sys
-import time
-
 from core.loader import load_train_dataset, load_standardized_train_dataset, load_test_dataset
-from core.processing import expand_dataset, split_training_test, split_claims_accept_reject, separate_features_label
+from core.preprocessing import expand_dataset, split_training_test, split_claims_accept_reject, separate_features_label
 from core.data_visualization import generate_data_visualization_plots
 from core.constants import DATASET_LABEL_NAME, DATASET_TRAIN_RATIO, MENU_EXIT, MENU_RETURN
 from core.data_analysis import perform_linear_regression_analysis, perform_polynomial_complexity_analysis, \
     perform_lasso_lambda_analysis, perform_ridge_lambda_analysis, perform_feature_correlation_analysis
 from library.option_input import OptionInput
+from main_induction import perform_decision_tree_induction
+
 
 def run_menu(title, options):
     exit_menu = None
     while exit_menu is None:
         print(f'--- {title} ---')
-        input = OptionInput('Select option', options, lambda option: option[0])
-        _, option = input.get_input()
+        option_input = OptionInput('Select option', options, lambda option: option[0])
+        _, option = option_input.get_input()
         exit_menu = option()
+
     return exit_menu
 
 def run_dataset_menu():
@@ -56,6 +56,7 @@ def main():
             ('Perform polynomial complexity analysis', lambda: perform_polynomial_complexity_analysis(train_data, test_data)),
             ('Perform lasso lambda analysis', lambda: perform_lasso_lambda_analysis(train_data, test_data)),
             ('Perform ridge lambda analysis', lambda: perform_ridge_lambda_analysis(train_data, test_data)),
+            ('Perform decision tree induction', lambda: perform_decision_tree_induction(dataset_raw)),
             MENU_RETURN
         ])
 
