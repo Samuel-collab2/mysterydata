@@ -1,8 +1,9 @@
+from os.path import join
 import pandas as pd
 
 from core.preprocessing import is_categorical_column, separate_features_label, split_training_test
-from core.model_induction import train_decision_tree
-from core.constants import DATASET_LABEL_NAME, DATASET_TRAIN_RATIO
+from core.model_induction import train_decision_tree, load_decision_tree
+from core.constants import DATASET_LABEL_NAME, DATASET_TRAIN_RATIO, OUTPUT_DIR
 
 
 def _extract_categorical_dataset(dataset):
@@ -23,7 +24,15 @@ def perform_decision_tree_induction(dataset):
         shuffle=True,
     )
 
-    model = train_decision_tree(train_features, train_labels)
+    export_path = join(OUTPUT_DIR, 'decision_tree.json')
+    try:
+        model = load_decision_tree(export_path)
+        print(f'Loaded decision tree dump from {export_path}')
+    except FileNotFoundError:
+        model = train_decision_tree(train_features, train_labels)
+        model.dump(export_path)
+        print(f'Wrote decision tree dump to {export_path}')
+
     pred_labels = model.predict(test_features)
     test_labels = list(test_labels)
 

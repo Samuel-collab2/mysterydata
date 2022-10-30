@@ -1,8 +1,10 @@
 from math import log2
+import json
 import pandas as pd
+from library.graph import Graph
 
 
-class BinaryDecisionTree:
+class BinaryDecisionTreeInduction:
 
     @staticmethod
     def _find_root_entropy(label):
@@ -26,6 +28,10 @@ class BinaryDecisionTree:
         self._tree = None
         self._dataset_num_features = 0
         self._dataset_label_name = None
+
+    @property
+    def tree(self):
+        return self._tree
 
     def _find_entropy(self, samples, feature):
         entropy = 0
@@ -57,15 +63,21 @@ class BinaryDecisionTree:
     def _find_information_gain(self, samples, feature, entropy):
         return entropy - self._find_entropy(samples, feature)
 
-    def _induce(self, samples):
+    def _induce(self, samples, path=None):
+        path = path or []
         ply = self._dataset_num_features - len(samples.columns) + 2
 
         if len(samples.columns) == 1:
-            return  # STOPPAGE CRITERIA: label is only column in dataset
+            # STOPPAGE CRITERIA: label is only column in dataset
+            #                    perform tie break
+            num_true_samples = len(samples[samples[self._dataset_label_name] == True])
+            num_samples = len(samples)
+            return num_true_samples > num_samples // 2
 
         root_entropy = self._find_root_entropy(samples.loc[:, self._dataset_label_name])
         if root_entropy == 0:
-            # STOPPAGE CRITERIA: perfect classification: all samples in dataset have the same label value
+            # STOPPAGE CRITERIA: perfect classification
+            #                    all samples in dataset have the same label value
             return samples.loc[:, self._dataset_label_name].any()
 
         feature_gains = {feature: self._find_information_gain(
@@ -87,20 +99,70 @@ class BinaryDecisionTree:
                 f' through {feature_value}'
                 f' at ply {ply + 1}'
                 f' ({len(child_samples)} samples)')
-            self._induce(child_samples)
+            child = self._induce(child_samples, path=(*path, max_feature))
+            self._tree.connect(
+                node1="/".join((*path, max_feature)),
+                node2=child if isinstance(child, str) else bool(child),
+                data=feature_value)
+
+        return max_feature
 
     def train(self, train_features, train_label):
+        self._tree = Graph(nodes=train_features.columns)
         self._dataset_num_features = len(train_features.columns)
         self._dataset_label_name = train_label.name
+
         train_samples = pd.concat((train_features, train_label), axis=1)
         self._induce(train_samples)
 
+    def traverse(self, sample):
+        feature = self._tree.nodes[0]
+        node = (feature, (feature,))
+
+        while node is not None:
+            feature, parent_path = node
+
+            parent_id = '/'.join(parent_path)
+            feature_value = sample[feature]
+
+            child = next((n2 for n1, n2, edge in self._tree.edges
+                if edge == feature_value
+                and n1 == parent_id), None)
+
+            if child is None or isinstance(child, bool):
+                print(parent_id, feature_value, child)
+                return child or False  # assume false if no data is provided
+
+            node = (child, (*parent_path, child))
+
     def predict(self, test_features):
-        return [False
-            for i, x in test_features.iterrows()]
+        return [self.traverse(sample)
+            for i, sample in test_features.iterrows()]
+
+    def load(self, file_path):
+        with open(file_path, mode='r', encoding='utf-8') as file:
+            file_buffer = file.read()
+        tree_edges = list(map(tuple, json.loads(file_buffer)))
+        tree_nodes = list(set([node for edge in tree_edges
+            for node in edge[0].split('/')
+                if not isinstance(node, bool)]))
+        self._tree = Graph(
+            nodes=sorted(tree_nodes, key=lambda n: -1 if n == 'feature3' else 1),
+            edges=tree_edges,
+        )
+
+    def dump(self, file_path):
+        file_buffer = json.dumps(self._tree.edges, separators=(',', ':'))
+        with open(file_path, mode='w', encoding='utf-8') as file:
+            file.write(file_buffer)
 
 
 def train_decision_tree(train_features, train_label):
-    model = BinaryDecisionTree()
+    model = BinaryDecisionTreeInduction()
     model.train(train_features, train_label)
+    return model
+
+def load_decision_tree(file_path):
+    model = BinaryDecisionTreeInduction()
+    model.load(file_path)
     return model
