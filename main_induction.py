@@ -2,7 +2,7 @@ from os.path import join
 import pandas as pd
 
 from core.preprocessing import is_categorical_column, separate_features_label, split_training_test
-from core.model_induction import train_decision_tree, load_decision_tree
+from core.model_induction import NullDecisionTreeInduction, BinaryDecisionTreeInduction, train_decision_tree
 from core.constants import DATASET_LABEL_NAME, DATASET_TRAIN_RATIO, OUTPUT_DIR
 
 
@@ -13,26 +13,34 @@ def _extract_categorical_dataset(dataset):
 
 
 def perform_decision_tree_induction(dataset):
-    features, label = separate_features_label(dataset, DATASET_LABEL_NAME)
+    features, labels = separate_features_label(dataset, DATASET_LABEL_NAME)
     categorical_features = _extract_categorical_dataset(features)
-    categorical_label = pd.Series(label).map(bool)
+    categorical_labels = pd.Series(labels).map(bool)
 
     (train_features, train_labels), (test_features, test_labels) = split_training_test(
         categorical_features,
-        categorical_label,
+        categorical_labels,
         train_factor=DATASET_TRAIN_RATIO,
         shuffle=True,
     )
 
     export_path = join(OUTPUT_DIR, 'decision_tree.json')
     try:
-        model = load_decision_tree(export_path)
+        model = BinaryDecisionTreeInduction.load_from_path(export_path)
         print(f'Loaded decision tree dump from {export_path}')
     except FileNotFoundError:
+        print('Training induction model based on categorical features...')
         model = train_decision_tree(train_features, train_labels)
         model.dump(export_path)
         print(f'Wrote decision tree dump to {export_path}')
 
+    print("\nEvaluating performance of null induction model...")
+    evaluate_model(NullDecisionTreeInduction(), test_features, test_labels)
+
+    print("\nEvaluating performance of categorical feature-based induction model...")
+    evaluate_model(model, test_features, test_labels)
+
+def evaluate_model(model, test_features, test_labels):
     pred_labels = model.predict(test_features)
     test_labels = list(test_labels)
 

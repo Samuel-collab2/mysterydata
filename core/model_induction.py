@@ -4,7 +4,17 @@ import pandas as pd
 from library.graph import Graph
 
 
-class BinaryDecisionTreeInduction:
+class NullDecisionTreeInduction:
+
+    def train(self, train_features: pd.DataFrame, train_label: pd.Series):
+        pass
+
+    def predict(self, test_features: pd.DataFrame):
+        return [False
+            for i, sample in test_features.iterrows()]
+
+
+class BinaryDecisionTreeInduction(NullDecisionTreeInduction):
 
     @staticmethod
     def _find_root_entropy(label):
@@ -23,9 +33,24 @@ class BinaryDecisionTreeInduction:
     def _find_feature_values(samples, feature):
         return list(set(samples.loc[:, feature]))
 
+    @classmethod
+    def load_from_path(cls, file_path):
+        with open(file_path, mode='r', encoding='utf-8') as file:
+            file_buffer = file.read()
 
-    def __init__(self):
-        self._tree = None
+        tree_edges = list(map(tuple, json.loads(file_buffer)))
+        tree_nodes = list(set([node for edge in tree_edges
+            for node in edge[0].split('/')
+                if not isinstance(node, bool)]))
+
+        return cls(Graph(
+            nodes=sorted(tree_nodes, key=lambda n: -1 if n == 'feature3' else 1),
+            edges=tree_edges,
+        ))
+
+
+    def __init__(self, tree=None):
+        self._tree = tree
         self._dataset_num_features = 0
         self._dataset_label_name = None
 
@@ -65,7 +90,6 @@ class BinaryDecisionTreeInduction:
 
     def _induce(self, samples, path=None):
         path = path or []
-        ply = self._dataset_num_features - len(samples.columns) + 2
 
         if len(samples.columns) == 1:
             # STOPPAGE CRITERIA: label is only column in dataset
@@ -95,10 +119,6 @@ class BinaryDecisionTreeInduction:
         other_features = [feature for feature in samples.columns if feature != max_feature]
         for feature_value in self._find_feature_values(samples, max_feature):
             child_samples = samples[samples[max_feature] == feature_value].loc[:, other_features]
-            print(f'Induce {max_feature}'
-                f' through {feature_value}'
-                f' at ply {ply + 1}'
-                f' ({len(child_samples)} samples)')
             child = self._induce(child_samples, path=(*path, max_feature))
             self._tree.connect(
                 node1="/".join((*path, max_feature)),
@@ -130,7 +150,6 @@ class BinaryDecisionTreeInduction:
                 and n1 == parent_id), None)
 
             if child is None or isinstance(child, bool):
-                print(parent_id, feature_value, child)
                 return child or False  # assume false if no data is provided
 
             node = (child, (*parent_path, child))
@@ -138,18 +157,6 @@ class BinaryDecisionTreeInduction:
     def predict(self, test_features):
         return [self.traverse(sample)
             for i, sample in test_features.iterrows()]
-
-    def load(self, file_path):
-        with open(file_path, mode='r', encoding='utf-8') as file:
-            file_buffer = file.read()
-        tree_edges = list(map(tuple, json.loads(file_buffer)))
-        tree_nodes = list(set([node for edge in tree_edges
-            for node in edge[0].split('/')
-                if not isinstance(node, bool)]))
-        self._tree = Graph(
-            nodes=sorted(tree_nodes, key=lambda n: -1 if n == 'feature3' else 1),
-            edges=tree_edges,
-        )
 
     def dump(self, file_path):
         file_buffer = json.dumps(self._tree.edges, separators=(',', ':'))
@@ -160,9 +167,4 @@ class BinaryDecisionTreeInduction:
 def train_decision_tree(train_features, train_label):
     model = BinaryDecisionTreeInduction()
     model.train(train_features, train_label)
-    return model
-
-def load_decision_tree(file_path):
-    model = BinaryDecisionTreeInduction()
-    model.load(file_path)
     return model
