@@ -12,7 +12,7 @@ MIN_REAL_FEATURE_UNIQUE_VALUES = 20
 # because there are too many feature dimensions,
 # once reduced we can evaluate if higher degree models perform better.
 ANALYSIS_CROSS_VALIDATION_SETS = 5
-ANALYSIS_POLYNOMIAL_DEGREES = 3
+ANALYSIS_POLYNOMIAL_DEGREES = 20
 ANALYSIS_LASSO_LAMBDAS = [pow(10, exponent) for exponent in np.arange(-5, 1, 0.25)]
 ANALYSIS_RIDGE_LAMBDAS = [pow(10, exponent) for exponent in range(-5, 10)]
 ANALYSIS_SIGNIFICANT_FEATURE_COUNT = 20
