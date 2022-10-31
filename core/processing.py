@@ -17,6 +17,12 @@ def separate_features_label(dataset, label_column):
         dataset.loc[:, label_column],
     )
 
+def separate_features_label_and_remove_rowIndex_col(dataset, label_column):
+    return (
+        dataset.drop([label_column, 'rowIndex'], axis='columns', inplace=False),
+        dataset.loc[:, label_column],
+    )
+
 def split_training_test(features, label, train_factor):
     train_features, test_features, train_label, test_label = train_test_split(
         features,
