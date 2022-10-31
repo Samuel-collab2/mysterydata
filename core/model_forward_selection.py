@@ -4,7 +4,7 @@ from sklearn.linear_model import LinearRegression
 import numpy as np
 import sys
 
-
+# Used to initially measure against optimality function scores generated during feature selection
 LARGEST_FLOAT = sys.float_info.max
 
 
