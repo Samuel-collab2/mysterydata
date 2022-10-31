@@ -51,12 +51,11 @@ def forward_stepwise(total_features=10):
             data_train_subset = training_features_origin[test_features_categories]
             data_test_subset = test_features_origin[test_features_categories]
 
-            # calculate mae with chosen features
+            # calculate optimality score with chosen features
             lin_reg = LinearRegression()
             lin_reg.fit(data_train_subset, training_labels)
             price_pred = lin_reg.predict(data_test_subset)
-
-            # calculate RSS with chosen features
+            # optimality score == RSS
             res_sum_sq = np.sum(np.square(test_labels - price_pred))
             # print(res_sum_sq)
 
@@ -83,7 +82,7 @@ def forward_stepwise(total_features=10):
         training_features = training_features.drop(best_mae_and_feature[1], axis='columns', inplace=False)
         test_features = test_features.drop(best_mae_and_feature[1], axis='columns', inplace=False)
 
-        # update 'my_array_of_features'!
+        # update 'my_array_of_features' array with next chosen feature
         my_array_of_features.append(best_mae_and_feature[1])
 
     print("\nFinal chosen features")
