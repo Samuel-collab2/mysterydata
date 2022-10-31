@@ -1,6 +1,10 @@
 import pandas as pd
 from sklearn.model_selection import train_test_split, KFold
-from core.constants import MIN_REAL_FEATURE_UNIQUE_VALUES
+from core.constants import MIN_REAL_FEATURE_UNIQUE_VALUES, SIGNIFICANT_REGRESSION_FEATURES
+
+def get_significant_regression_features(features, count):
+    columns = SIGNIFICANT_REGRESSION_FEATURES[0:count]
+    return features.loc[:, columns]
 
 def zip_sort(lead_list, follow_list, comparator=lambda x: x[0], reverse=False):
     return zip(*sorted(zip(lead_list, follow_list), key=comparator, reverse=reverse))
@@ -30,9 +34,33 @@ def split_claims_accept_reject(features, label):
     reject_indices = label[label == 0].index
     return (features.iloc[accept_indices], label.iloc[accept_indices]), (features.iloc[reject_indices], label.iloc[reject_indices])
 
+def convert_label_binary(label):
+    return label.mask(label > 0, 1, inplace=False)
+
 def is_categorical_column(column):
     return (column.dtype == 'object'
         or column.nunique() < MIN_REAL_FEATURE_UNIQUE_VALUES)
+
+def encode_feature(feature):
+    return pd.get_dummies(
+        feature,
+        columns=[feature.name],
+    )
+
+def expand_dataset_indexed(dataset):
+    subsets = []
+    for column in dataset.columns:
+        feature = dataset[column]
+        is_encoded = is_categorical_column(feature)
+        if is_encoded:
+            subset = encode_feature(feature)
+            subset_columns = {subset_column: f'{column}_{index}' for index, subset_column in enumerate(subset.columns)}
+            subset.rename(columns=subset_columns, inplace=True)
+            subsets.append(subset)
+        else:
+            subsets.append(feature)
+
+    return pd.concat(subsets, axis=1)
 
 def expand_dataset(dataset):
     """
