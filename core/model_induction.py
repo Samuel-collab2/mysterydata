@@ -6,7 +6,7 @@ from library.graph import Graph
 
 class NullDecisionTreeInduction:
 
-    def train(self, train_features: pd.DataFrame, train_label: pd.Series):
+    def fit(self, train_features: pd.DataFrame, train_label: pd.Series):
         pass
 
     def predict(self, test_features: pd.DataFrame):
@@ -128,7 +128,7 @@ class BinaryDecisionTreeInduction(NullDecisionTreeInduction):
 
         return max_feature
 
-    def train(self, train_features, train_label):
+    def fit(self, train_features, train_label):
         self._tree = Graph(nodes=train_features.columns)
         self._dataset_num_features = len(train_features.columns)
         self._dataset_label_name = train_label.name
@@ -165,5 +165,5 @@ class BinaryDecisionTreeInduction(NullDecisionTreeInduction):
 
 def train_decision_tree(train_features, train_label):
     model = BinaryDecisionTreeInduction()
-    model.train(train_features, train_label)
+    model.fit(train_features, train_label)
     return model
