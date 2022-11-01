@@ -7,13 +7,13 @@ from core.model_induction import train_decision_tree, BinaryDecisionTreeInductio
 from core.model_regression import train_linear_regression
 
 class CompositeModel:
-    def __init__(self, induction_export_file):
+    def __init__(self, induction_export_filename):
         self._induction_model = None
         self._regression_model = None
-        self._induction_export_file = induction_export_file
+        self._induction_export_filename = induction_export_filename
 
     def train(self, induction_train_features, induction_train_label, regression_train_features, regression_train_label):
-        export_path = join(OUTPUT_DIR, self._induction_export_file)
+        export_path = join(OUTPUT_DIR, f'{self._induction_export_filename}.json')
 
         try:
             self._induction_model = BinaryDecisionTreeInduction.load_from_path(export_path)
@@ -34,7 +34,7 @@ class CompositeModel:
             in enumerate(induction_predictions)
         ]
 
-def train_composite(induction_train_features, induction_train_label, regression_train_features, regression_train_label, export_file):
-    model = CompositeModel(export_file)
+def train_composite(induction_train_features, induction_train_label, regression_train_features, regression_train_label, export_filename):
+    model = CompositeModel(export_filename)
     model.train(induction_train_features, induction_train_label, regression_train_features, regression_train_label)
     return model

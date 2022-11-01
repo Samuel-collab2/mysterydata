@@ -1,6 +1,8 @@
+from os import path
+
 import pandas as pd
 
-from core.constants import SUBMISSION_SAMPLE_COUNT, DATASET_LABEL_NAME
+from core.constants import SUBMISSION_SAMPLE_COUNT, DATASET_LABEL_NAME, OUTPUT_DIR
 from core.loader import load_test_dataset
 from core.model_composite import train_composite
 from core.preprocessing import preprocess_induction_data, separate_features_label, \
@@ -62,36 +64,42 @@ def _get_submission_data(dataset):
     return induction_train_features, induction_train_label, raw_test_features, \
         regression_train_features, regression_train_label, regression_test_features
 
-def _output_predictions(model, induction_test_features, regression_test_features):
+def _output_predictions(model, induction_test_features, regression_test_features, filename):
     predictions = model.predict(induction_test_features, regression_test_features)
-    for prediction, row in zip(predictions, induction_test_features["rowIndex"]):
-
-        print(f"{row}: {prediction}")
+    output = pd.DataFrame({
+        'rowIndex': induction_test_features['rowIndex'].values,
+        'ClaimAmount': predictions,
+    }).set_index('rowIndex').sort_index()
+    filepath = path.join(OUTPUT_DIR, f'{filename}.csv')
+    output.to_csv(filepath)
+    print(f'Wrote predictions to file: {filepath}')
 
 def predict_submission1_ridge(dataset):
     induction_train_features, induction_train_label, raw_test_features, \
         regression_train_features, regression_train_label, regression_test_features = _get_submission_data(dataset)
 
+    filename = 'submission1_ridge'
     model = train_composite(
         induction_train_features,
         induction_train_label,
         regression_train_features.loc[:, SIGNIFICANT_RIDGE_FEATURES],
         regression_train_label,
-        'submission1_ridge.json',
+        filename,
     )
 
-    _output_predictions(model, raw_test_features, regression_test_features.loc[:, SIGNIFICANT_RIDGE_FEATURES])
+    _output_predictions(model, raw_test_features, regression_test_features.loc[:, SIGNIFICANT_RIDGE_FEATURES], filename)
 
 def predict_submission1_propagation(dataset):
     induction_train_features, induction_train_label, raw_test_features, \
         regression_train_features, regression_train_label, regression_test_features = _get_submission_data(dataset)
 
+    filename = 'submission1_propagation'
     model = train_composite(
         induction_train_features,
         induction_train_label,
         regression_train_features.loc[:, SIGNIFICANT_PROPAGATION_FEATURES],
         regression_train_label,
-        'submission1_propagation.json',
+        filename,
     )
 
-    _output_predictions(model, raw_test_features, regression_test_features.loc[:, SIGNIFICANT_PROPAGATION_FEATURES])
+    _output_predictions(model, raw_test_features, regression_test_features.loc[:, SIGNIFICANT_PROPAGATION_FEATURES], filename)
