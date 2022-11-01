@@ -56,8 +56,8 @@ def _get_submission_data(dataset):
     raw_train_dataset = dataset
     raw_test_features = _get_submission_features()
 
-    raw_features, raw_label = separate_features_label(raw_train_dataset, DATASET_LABEL_NAME)
-    induction_train_features, induction_train_label = preprocess_induction_data(raw_features, raw_label)
+    raw_train_features, raw_train_label = separate_features_label(raw_train_dataset, DATASET_LABEL_NAME)
+    induction_train_features, induction_train_label = preprocess_induction_data(raw_train_features, raw_train_label)
 
     combined_dataset = pd.concat([raw_train_dataset, raw_test_features], axis=0)
     combined_expanded_dataset = expand_dataset(combined_dataset)
@@ -66,7 +66,7 @@ def _get_submission_data(dataset):
     regression_train_dataset = combined_expanded_dataset.iloc[:train_dataset_length]
     regression_test_dataset = combined_expanded_dataset.iloc[train_dataset_length:]
 
-    regression_train_features, regression_train_labels = separate_features_label(
+    regression_train_features, regression_train_label = separate_features_label(
         regression_train_dataset,
         DATASET_LABEL_NAME
     )
@@ -76,11 +76,12 @@ def _get_submission_data(dataset):
         DATASET_LABEL_NAME
     )
 
-    regression_data, _ = split_claims_accept_reject(regression_train_features, regression_train_labels)
-    regression_train_features, regression_train_label = regression_data
+    accept_data, _ = split_claims_accept_reject(regression_train_features, regression_train_label)
+    accept_train_features, accept_train_label = accept_data
 
     return induction_train_features, induction_train_label, raw_test_features, \
-        regression_train_features, regression_train_label, regression_test_features
+        accept_train_features, accept_train_label, regression_test_features, \
+        raw_train_features, regression_train_features, regression_train_label
 
 def _output_predictions(model, induction_test_features, regression_test_features, filename):
     predictions = model.predict(induction_test_features, regression_test_features)
@@ -94,7 +95,8 @@ def _output_predictions(model, induction_test_features, regression_test_features
 
 def _predict_feature_sets(dataset, feature_sets, file_prefix):
     induction_train_features, induction_train_label, raw_test_features, \
-        regression_train_features, regression_train_label, regression_test_features = _get_submission_data(dataset)
+        accept_train_features, accept_train_label, regression_test_features, \
+        raw_train_features, regression_train_features, regression_train_label = _get_submission_data(dataset)
 
     for index, feature_set in enumerate(feature_sets):
         filename = f'{file_prefix}_set{index}'
@@ -105,16 +107,16 @@ def _predict_feature_sets(dataset, feature_sets, file_prefix):
         model = train_composite(
             induction_train_features,
             induction_train_label,
-            regression_train_features.loc[:, feature_set],
-            regression_train_label,
+            accept_train_features.loc[:, feature_set],
+            accept_train_label,
             file_prefix,
         )
 
-        # training_predictions = model.predict(induction_train_features, regression_train_features.loc[:, feature_set])
-        # training_mae = mean_absolute_error(regression_train_label, training_predictions)
-        # print(f'Training MAE: {training_mae}')
+        training_predictions = model.predict(raw_train_features, regression_train_features.loc[:, feature_set])
+        training_mae = mean_absolute_error(regression_train_label, training_predictions)
+        print(f'Training MAE: {training_mae}')
 
-        _output_predictions(model, raw_test_features, regression_test_features.loc[:, feature_set], filename)
+        # _output_predictions(model, raw_test_features, regression_test_features.loc[:, feature_set], filename)
 
 def predict_submission1_ridge(dataset):
     feature_sets = [
