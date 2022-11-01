@@ -1,7 +1,9 @@
 from core.loader import load_train_dataset, load_standardized_train_dataset, load_test_dataset
-from core.preprocessing import expand_dataset, split_training_test, split_claims_accept_reject, separate_features_label
+from core.preprocessing import expand_dataset_indexed, split_training_test, split_claims_accept_reject, \
+    separate_features_label, convert_label_binary, get_significant_regression_features
 from core.data_visualization import generate_data_visualization_plots
-from core.constants import DATASET_LABEL_NAME, DATASET_TRAIN_RATIO, MENU_EXIT, MENU_RETURN
+from core.constants import DATASET_LABEL_NAME, DATASET_TRAIN_RATIO, MENU_EXIT, MENU_RETURN, \
+    SIGNIFICANT_REGRESSION_FEATURE_COUNT
 from core.data_analysis import perform_linear_regression_analysis, perform_polynomial_complexity_analysis, \
     perform_lasso_lambda_analysis, perform_ridge_lambda_analysis, perform_feature_correlation_analysis
 from library.option_input import OptionInput
@@ -21,7 +23,7 @@ def run_menu(title, options):
 def run_dataset_menu():
     return run_menu('Load dataset', [
         ('Train dataset', load_train_dataset),
-        ('Standardized train dataset', load_standardized_train_dataset),
+        ('Train dataset - Standardized', load_standardized_train_dataset),
         ('Test dataset', load_test_dataset),
     ])
 
@@ -31,12 +33,19 @@ def main():
     raw_data = separate_features_label(dataset_raw, DATASET_LABEL_NAME)
     raw_features, raw_label = raw_data
 
-    dataset = expand_dataset(dataset_raw)
+    dataset = expand_dataset_indexed(dataset_raw)
     features, label = separate_features_label(dataset, DATASET_LABEL_NAME)
+
+    binary_label = convert_label_binary(label)
 
     accept_data, reject_data = split_claims_accept_reject(features, label)
     accept_features, accept_label = accept_data
     reject_features, reject_label = reject_data
+
+    significant_regression_features = get_significant_regression_features(
+        accept_features,
+        SIGNIFICANT_REGRESSION_FEATURE_COUNT
+    )
 
     def run_dev_test():
         # Intended for temporary development tests
@@ -56,24 +65,36 @@ def main():
             ('Perform polynomial complexity analysis', lambda: perform_polynomial_complexity_analysis(train_data, test_data)),
             ('Perform lasso lambda analysis', lambda: perform_lasso_lambda_analysis(train_data, test_data)),
             ('Perform ridge lambda analysis', lambda: perform_ridge_lambda_analysis(train_data, test_data)),
-            ('Perform decision tree induction', lambda: perform_decision_tree_induction(dataset_raw)),
+            ('Perform decision tree induction (Raw data)', lambda: perform_decision_tree_induction(dataset_raw)),
             MENU_RETURN
         ])
 
-    def data_selection_menu(title, next_menu):
+    def data_selection_menu(title, on_select):
         run_menu(title, [
-            ('Expanded data', lambda: next_menu(features, label)),
-            ('Accepted claim data', lambda: next_menu(accept_features, accept_label)),
-            ('Rejected claim data', lambda: next_menu(reject_features, reject_label)),
-            ('Raw data', lambda: next_menu(raw_features, raw_label)),
+            ('Expanded - Data', lambda: on_select(features, label)),
+            ('Expanded - Binary label data', lambda: on_select(features, binary_label)),
+            ('Expanded - Accepted claim data', lambda: on_select(accept_features, accept_label)),
+            ('Expanded - Rejected claim data', lambda: on_select(reject_features, reject_label)),
+            ('Raw - Data', lambda: on_select(raw_features, raw_label)),
+            ('Raw - Binary label data', lambda: on_select(raw_features, binary_label)),
+            ("Significant - Regression data", lambda: on_select(significant_regression_features, accept_label)),
             MENU_RETURN
         ])
 
     def main_menu():
         run_menu('Main Menu', [
-            ('Run dev test', run_dev_test),
-            ('Generate data visualization plots', lambda: generate_data_visualization_plots(raw_features, raw_label)),
-            ('Perform data analysis', lambda: data_selection_menu("Select Analysis Data", analysis_menu)),
+            (
+                'Run dev test',
+                run_dev_test
+            ),
+            (
+                'Generate data visualization plots',
+                lambda: data_selection_menu("Select Visualization Data", generate_data_visualization_plots)
+            ),
+            (
+                'Perform data analysis',
+                lambda: data_selection_menu("Select Analysis Data", analysis_menu)
+            ),
             MENU_EXIT
         ])
 
