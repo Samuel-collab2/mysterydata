@@ -34,7 +34,11 @@ class CompositeModel:
             in enumerate(induction_predictions)
         ]
 
-def train_composite(induction_train_features, induction_train_label, regression_train_features, regression_train_label, export_filename):
+def train_composite(
+    induction_train_features, induction_train_label,
+    regression_train_features, regression_train_label,
+    export_filename
+):
     model = CompositeModel(export_filename)
     model.train(induction_train_features, induction_train_label, regression_train_features, regression_train_label)
     return model
