@@ -116,7 +116,7 @@ def _predict_feature_sets(dataset, feature_sets, file_prefix):
         training_mae = mean_absolute_error(regression_train_label, training_predictions)
         print(f'Training MAE: {training_mae}')
 
-        # _output_predictions(model, raw_test_features, regression_test_features.loc[:, feature_set], filename)
+        _output_predictions(model, raw_test_features, regression_test_features.loc[:, feature_set], filename)
 
 def predict_submission1_ridge(dataset):
     feature_sets = [
