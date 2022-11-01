@@ -30,15 +30,8 @@ def split_claims_accept_reject(features, label):
     reject_indices = label[label == 0].index
     return (features.iloc[accept_indices], label.iloc[accept_indices]), (features.iloc[reject_indices], label.iloc[reject_indices])
 
-def _extract_categorical_features(features):
-    categorical_feature_names = [
-        column_name for column_name in features.columns
-        if is_categorical_feature(features[column_name])
-    ]
-    return features.loc[:, categorical_feature_names]
-
 def preprocess_induction_data(features, label):
-    return _extract_categorical_features(features), pd.Series(label).map(bool)
+    return expand_dataset(features), pd.Series(label).map(bool)
 
 def convert_label_binary(label):
     return label.mask(label > 0, 1, inplace=False)

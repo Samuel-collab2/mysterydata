@@ -50,7 +50,7 @@ SIGNIFICANT_PROPAGATION_FEATURES = [
 
 def _get_submission_features():
     dataset = load_test_dataset()
-    return dataset.sample(n=SUBMISSION_SAMPLE_COUNT).sort_index()
+    return dataset.sample(n=SUBMISSION_SAMPLE_COUNT)
 
 def _get_submission_data(dataset):
     raw_train_dataset = dataset
@@ -107,21 +107,18 @@ def _predict_feature_sets(dataset, feature_sets, file_prefix):
             induction_train_label,
             regression_train_features.loc[:, feature_set],
             regression_train_label,
-            filename,
+            file_prefix,
         )
 
-        print(regression_train_features.loc[:, feature_set])
-        print(regression_test_features.loc[:, feature_set])
-
-        training_predictions = model.predict(induction_train_features, regression_train_features.loc[:, feature_set])
-        training_mae = mean_absolute_error(regression_train_label, training_predictions)
-        print(f'Training MAE: {training_mae}')
+        # training_predictions = model.predict(induction_train_features, regression_train_features.loc[:, feature_set])
+        # training_mae = mean_absolute_error(regression_train_label, training_predictions)
+        # print(f'Training MAE: {training_mae}')
 
         _output_predictions(model, raw_test_features, regression_test_features.loc[:, feature_set], filename)
 
 def predict_submission1_ridge(dataset):
     feature_sets = [
-        SIGNIFICANT_RIDGE_FEATURES[0:feature_count]
+        SIGNIFICANT_RIDGE_FEATURES[:feature_count]
         for feature_count
         in SIGNIFICANT_RIDGE_COUNTS
     ]
@@ -129,7 +126,7 @@ def predict_submission1_ridge(dataset):
 
 def predict_submission1_propagation(dataset):
     feature_sets = [
-        SIGNIFICANT_PROPAGATION_FEATURES[0:feature_count]
+        SIGNIFICANT_PROPAGATION_FEATURES[:feature_count]
         for feature_count
         in SIGNIFICANT_PROPAGATION_COUNTS
     ]
