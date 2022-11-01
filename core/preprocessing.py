@@ -36,6 +36,9 @@ def preprocess_induction_data(features, label):
 def convert_label_binary(label):
     return label.mask(label > 0, 1, inplace=False)
 
+def convert_label_boolean(label):
+    return pd.Series(label).map(bool)
+
 def is_categorical_feature(column):
     return (column.dtype == 'object'
         or column.nunique() < MIN_REAL_FEATURE_UNIQUE_VALUES)
