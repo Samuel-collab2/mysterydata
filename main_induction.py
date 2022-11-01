@@ -5,16 +5,8 @@ from sklearn.tree import DecisionTreeClassifier
 from core.preprocessing import separate_features_label, split_training_test, \
     expand_dataset
 from core.model_induction import NullDecisionTreeInduction
-from core.constants import DATASET_LABEL_NAME, DATASET_TRAIN_RATIO
-
-
-def is_categorical_column(column):
-    return column.dtype == "uint8"
-
-def _extract_categorical_dataset(dataset):
-    categorical_feature_names = [column_name for column_name in dataset.columns
-        if is_categorical_column(dataset[column_name])]
-    return dataset.loc[:, categorical_feature_names]
+from core.constants import DATASET_LABEL_NAME, DATASET_TRAIN_RATIO, \
+    SIGNIFICANT_BINARY_LABEL_FEATURES, SIGNIFICANT_FORWARD_STEPWISE_FEATURES
 
 
 def perform_decision_tree_induction(dataset):
@@ -29,31 +21,48 @@ def perform_decision_tree_induction(dataset):
         shuffle=True,
     )
 
+    categorical_columns = [column
+        for column in features_expanded.columns
+            if features_expanded[column].dtype == "uint8"]
+
+
+    def evaluate_classifier(model, feature_subset=features_expanded.columns):
+        model.fit(train_features.loc[:, feature_subset], train_labels)
+        evaluate_model(model, test_features.loc[:, feature_subset], test_labels)
+
+
     print('\nEvaluating performance of null induction model...')
-    evaluate_model(NullDecisionTreeInduction(), test_features, test_labels)
+    evaluate_classifier(NullDecisionTreeInduction())
 
     print('\nEvaluating performance of base DecisionTreeClassifier...')
-    model = DecisionTreeClassifier()
-    model.fit(train_features, train_labels)
-    evaluate_model(model, test_features, test_labels)
+    evaluate_classifier(DecisionTreeClassifier())
 
     print('\nEvaluating performance of entropy-based DecisionTreeClassifier...')
-    model = DecisionTreeClassifier(criterion='entropy')
-    model.fit(train_features, train_labels)
-    evaluate_model(model, test_features, test_labels)
-
-    train_features = _extract_categorical_dataset(train_features)
-    test_features = _extract_categorical_dataset(test_features)
+    evaluate_classifier(DecisionTreeClassifier(criterion='entropy'))
 
     print('\nEvaluating performance of categorical DecisionTreeClassifier...')
-    model = DecisionTreeClassifier()
-    model.fit(train_features, train_labels)
-    evaluate_model(model, test_features, test_labels)
+    evaluate_classifier(DecisionTreeClassifier(), categorical_columns)
 
     print('\nEvaluating performance of categorical entropy-based DecisionTreeClassifier...')
-    model = DecisionTreeClassifier(criterion='entropy')
-    model.fit(train_features, train_labels)
-    evaluate_model(model, test_features, test_labels)
+    evaluate_classifier(DecisionTreeClassifier(criterion='entropy'), categorical_columns)
+
+    print('\nEvaluating performance of most significant binary label feature-based DecisionTreeClassifier...')
+    evaluate_classifier(DecisionTreeClassifier(), SIGNIFICANT_BINARY_LABEL_FEATURES)
+
+    print('\nEvaluating performance of 7 most significant binary label feature-based DecisionTreeClassifier...')
+    evaluate_classifier(DecisionTreeClassifier(), SIGNIFICANT_BINARY_LABEL_FEATURES[:7])
+
+    print('\nEvaluating performance of 3 most significant binary label feature-based DecisionTreeClassifier...')
+    evaluate_classifier(DecisionTreeClassifier(), SIGNIFICANT_BINARY_LABEL_FEATURES[:3])
+
+    print('\nEvaluating performance of most significant forward stepwise feature-based DecisionTreeClassifier...')
+    evaluate_classifier(DecisionTreeClassifier(), SIGNIFICANT_FORWARD_STEPWISE_FEATURES)
+
+    print('\nEvaluating performance of 7 most significant forward stepwise feature-based DecisionTreeClassifier...')
+    evaluate_classifier(DecisionTreeClassifier(), SIGNIFICANT_FORWARD_STEPWISE_FEATURES[:7])
+
+    print('\nEvaluating performance of 3 most significant forward stepwise feature-based DecisionTreeClassifier...')
+    evaluate_classifier(DecisionTreeClassifier(), SIGNIFICANT_FORWARD_STEPWISE_FEATURES[:3])
 
 
 def evaluate_model(model, test_features, test_labels):
@@ -67,7 +76,7 @@ def evaluate_model(model, test_features, test_labels):
 
     print(f'Prediction: {num_predicted_accepts}/{num_rows} claims accepted'
         f'\nActual:     {num_observed_accepts}/{num_rows} claims accepted'
-        f'\nDecision tree induction model achieved {accuracy * 100:.2f}% accuracy.')
+        f'\nAccuracy:   {accuracy * 100:.2f}%')
 
 
 if __name__ == '__main__':
