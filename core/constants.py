@@ -22,3 +22,55 @@ SUBMISSION_SAMPLE_COUNT = 100
 
 MENU_EXIT = ('Exit', lambda: True)
 MENU_RETURN = ('<<< Back', lambda: True)
+
+SIGNIFICANT_REGRESSION_FEATURE_COUNT = 3
+SIGNIFICANT_REGRESSION_FEATURES = [
+    "feature1",
+    "feature3_8",
+    "feature15_6",
+    "feature10",
+    "feature14_3",
+    "feature14_1",
+    "feature3_1",
+    "feature15_5",
+    "feature11_4",
+    "feature16_5",
+    "feature15_4",
+]
+
+SIGNIFICANT_BINARY_LABEL_FEATURES = [
+    'feature1',
+    'feature3_8',
+    'feature10',
+    'feature7_2',
+    'feature7_0',
+    'feature3_2',
+    'feature3_3',
+    'feature12',
+    'feature3_4',
+    'feature16_5',
+    'feature3_7',
+]
+
+SIGNIFICANT_FORWARD_STEPWISE_FEATURES = [
+    'feature1',
+    'feature15_4',
+    'feature3_8',
+    'feature17',
+    'feature15_6',
+    'feature13_2',
+    'feature15_1',
+    'feature18_1',
+    'feature7_2',
+    'feature7_3',
+    'feature9_0',
+    'feature15_8',
+    'feature15_2',
+    'feature11_6',
+    'feature3_4',
+    'feature3_6',
+    'feature10',
+    'feature13_3',
+    'feature9_1',
+    'feature13_0',
+]
