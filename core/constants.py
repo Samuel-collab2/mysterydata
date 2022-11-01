@@ -18,20 +18,7 @@ ANALYSIS_RIDGE_LAMBDAS = [pow(10, exponent) for exponent in range(-5, 10)]
 ANALYSIS_SIGNIFICANT_FEATURE_COUNT = 20
 ANALYSIS_CORRELATION_THRESHOLD = 0.45
 
+SUBMISSION_SAMPLE_COUNT = 10
+
 MENU_EXIT = ('Exit', lambda: True)
 MENU_RETURN = ('<<< Back', lambda: True)
-
-SIGNIFICANT_REGRESSION_FEATURE_COUNT = 3
-SIGNIFICANT_REGRESSION_FEATURES = [
-    "feature1",
-    "feature3_8",
-    "feature15_6",
-    "feature10",
-    "feature14_3",
-    "feature14_1",
-    "feature3_1",
-    "feature15_5",
-    "feature11_4",
-    "feature16_5",
-    "feature15_4",
-]

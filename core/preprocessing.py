@@ -1,10 +1,6 @@
 import pandas as pd
 from sklearn.model_selection import train_test_split, KFold
-from core.constants import MIN_REAL_FEATURE_UNIQUE_VALUES, SIGNIFICANT_REGRESSION_FEATURES
-
-def get_significant_regression_features(features, count):
-    columns = SIGNIFICANT_REGRESSION_FEATURES[0:count]
-    return features.loc[:, columns]
+from core.constants import MIN_REAL_FEATURE_UNIQUE_VALUES
 
 def zip_sort(lead_list, follow_list, comparator=lambda x: x[0], reverse=False):
     return zip(*sorted(zip(lead_list, follow_list), key=comparator, reverse=reverse))
@@ -34,10 +30,20 @@ def split_claims_accept_reject(features, label):
     reject_indices = label[label == 0].index
     return (features.iloc[accept_indices], label.iloc[accept_indices]), (features.iloc[reject_indices], label.iloc[reject_indices])
 
+def _extract_categorical_features(features):
+    categorical_feature_names = [
+        column_name for column_name in features.columns
+        if is_categorical_feature(features[column_name])
+    ]
+    return features.loc[:, categorical_feature_names]
+
+def preprocess_induction_data(features, label):
+    return _extract_categorical_features(features), pd.Series(label).map(bool)
+
 def convert_label_binary(label):
     return label.mask(label > 0, 1, inplace=False)
 
-def is_categorical_column(column):
+def is_categorical_feature(column):
     return (column.dtype == 'object'
         or column.nunique() < MIN_REAL_FEATURE_UNIQUE_VALUES)
 
@@ -47,11 +53,11 @@ def encode_feature(feature):
         columns=[feature.name],
     )
 
-def expand_dataset_indexed(dataset):
+def expand_dataset_indexed(dataset, is_expanded_column=is_categorical_feature):
     subsets = []
     for column in dataset.columns:
         feature = dataset[column]
-        is_encoded = is_categorical_column(feature)
+        is_encoded = is_expanded_column(feature)
         if is_encoded:
             subset = encode_feature(feature)
             subset_columns = {subset_column: f'{column}_{index}' for index, subset_column in enumerate(subset.columns)}
@@ -62,7 +68,7 @@ def expand_dataset_indexed(dataset):
 
     return pd.concat(subsets, axis=1)
 
-def expand_dataset(dataset):
+def expand_dataset(dataset, is_expanded_column=is_categorical_feature):
     """
     Expands the dataset by splitting each categorical column into many
     :param dataset: the raw dataset
@@ -70,7 +76,7 @@ def expand_dataset(dataset):
     """
 
     categorical_columns = [column for column in dataset.columns
-                           if is_categorical_column(dataset[column])]
+                           if is_expanded_column(dataset[column])]
 
     data_expanded = pd.get_dummies(dataset,
                                    columns=categorical_columns,

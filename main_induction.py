@@ -1,21 +1,11 @@
 from os.path import join
-import pandas as pd
 
-from core.preprocessing import is_categorical_column, separate_features_label, split_training_test
+from core.preprocessing import split_training_test, preprocess_induction_data, separate_features_label
 from core.model_induction import NullDecisionTreeInduction, BinaryDecisionTreeInduction, train_decision_tree
-from core.constants import DATASET_LABEL_NAME, DATASET_TRAIN_RATIO, OUTPUT_DIR
-
-
-def _extract_categorical_dataset(dataset):
-    categorical_feature_names = [column_name for column_name in dataset.columns
-        if is_categorical_column(dataset[column_name])]
-    return dataset.loc[:,categorical_feature_names]
-
+from core.constants import DATASET_TRAIN_RATIO, OUTPUT_DIR, DATASET_LABEL_NAME
 
 def perform_decision_tree_induction(dataset):
-    features, labels = separate_features_label(dataset, DATASET_LABEL_NAME)
-    categorical_features = _extract_categorical_dataset(features)
-    categorical_labels = pd.Series(labels).map(bool)
+    categorical_features, categorical_labels = preprocess_induction_data(*separate_features_label(dataset, DATASET_LABEL_NAME))
 
     (train_features, train_labels), (test_features, test_labels) = split_training_test(
         categorical_features,

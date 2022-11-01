@@ -1,11 +1,11 @@
-from core.loader import load_train_dataset, load_standardized_train_dataset, load_test_dataset
-from core.preprocessing import expand_dataset_indexed, split_training_test, split_claims_accept_reject, \
-    separate_features_label, convert_label_binary, get_significant_regression_features
-from core.data_visualization import generate_data_visualization_plots
-from core.constants import DATASET_LABEL_NAME, DATASET_TRAIN_RATIO, MENU_EXIT, MENU_RETURN, \
-    SIGNIFICANT_REGRESSION_FEATURE_COUNT
+from core.constants import DATASET_LABEL_NAME, DATASET_TRAIN_RATIO, MENU_EXIT, MENU_RETURN
 from core.data_analysis import perform_linear_regression_analysis, perform_polynomial_complexity_analysis, \
     perform_lasso_lambda_analysis, perform_ridge_lambda_analysis, perform_feature_correlation_analysis
+from core.data_visualization import generate_data_visualization_plots
+from core.loader import load_train_dataset, load_standardized_train_dataset
+from core.predict import predict_submission1_ridge, predict_submission1_propagation
+from core.preprocessing import split_training_test, split_claims_accept_reject, \
+    separate_features_label, convert_label_binary, expand_dataset
 from library.option_input import OptionInput
 from main_induction import perform_decision_tree_induction
 
@@ -24,7 +24,6 @@ def run_dataset_menu():
     return run_menu('Load dataset', [
         ('Train dataset', load_train_dataset),
         ('Train dataset - Standardized', load_standardized_train_dataset),
-        ('Test dataset', load_test_dataset),
     ])
 
 def main():
@@ -33,7 +32,7 @@ def main():
     raw_data = separate_features_label(dataset_raw, DATASET_LABEL_NAME)
     raw_features, raw_label = raw_data
 
-    dataset = expand_dataset_indexed(dataset_raw)
+    dataset = expand_dataset(dataset_raw)
     features, label = separate_features_label(dataset, DATASET_LABEL_NAME)
 
     binary_label = convert_label_binary(label)
@@ -42,15 +41,17 @@ def main():
     accept_features, accept_label = accept_data
     reject_features, reject_label = reject_data
 
-    significant_regression_features = get_significant_regression_features(
-        accept_features,
-        SIGNIFICANT_REGRESSION_FEATURE_COUNT
-    )
-
     def run_dev_test():
         # Intended for temporary development tests
         # Run whatever you want here
         pass
+
+    def prediction_menu():
+        run_menu("Model prediction menu", [
+            ('Submission 1 - Ridge', lambda: predict_submission1_ridge(dataset_raw)),
+            ('Submission 1 - Propagation', lambda: predict_submission1_propagation(dataset_raw)),
+            MENU_RETURN
+        ])
 
     def analysis_menu(features, label):
         train_data, test_data = split_training_test(
@@ -77,7 +78,6 @@ def main():
             ('Expanded - Rejected claim data', lambda: on_select(reject_features, reject_label)),
             ('Raw - Data', lambda: on_select(raw_features, raw_label)),
             ('Raw - Binary label data', lambda: on_select(raw_features, binary_label)),
-            ("Significant - Regression data", lambda: on_select(significant_regression_features, accept_label)),
             MENU_RETURN
         ])
 
@@ -94,6 +94,10 @@ def main():
             (
                 'Perform data analysis',
                 lambda: data_selection_menu("Select Analysis Data", analysis_menu)
+            ),
+            (
+                'Run model prediction',
+                prediction_menu
             ),
             MENU_EXIT
         ])
