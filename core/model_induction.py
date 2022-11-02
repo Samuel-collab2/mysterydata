@@ -1,6 +1,8 @@
 from math import log2
 import json
 import pandas as pd
+from sklearn.tree import DecisionTreeClassifier
+
 from library.graph import Graph
 
 
@@ -165,5 +167,10 @@ class BinaryDecisionTreeInduction(NullDecisionTreeInduction):
 
 def train_decision_tree(train_features, train_label):
     model = BinaryDecisionTreeInduction()
+    model.fit(train_features, train_label)
+    return model
+
+def train_classifier_tree(train_features, train_label):
+    model = DecisionTreeClassifier()
     model.fit(train_features, train_label)
     return model

@@ -1,9 +1,8 @@
-import pandas as pd
 from sklearn.metrics import accuracy_score
 from sklearn.tree import DecisionTreeClassifier
 
-from core.preprocessing import separate_features_label, split_training_test, \
-    expand_dataset
+from core.preprocessing import separate_features_label, split_training_test, expand_dataset, \
+    convert_label_boolean
 from core.model_induction import NullDecisionTreeInduction
 from core.constants import DATASET_LABEL_NAME, DATASET_TRAIN_RATIO, \
     SIGNIFICANT_BINARY_LABEL_FEATURES, SIGNIFICANT_FORWARD_STEPWISE_FEATURES
@@ -12,11 +11,11 @@ from core.constants import DATASET_LABEL_NAME, DATASET_TRAIN_RATIO, \
 def perform_decision_tree_induction(dataset):
     features, labels = separate_features_label(dataset, DATASET_LABEL_NAME)
     features_expanded = expand_dataset(features)
-    labels_binary = pd.Series(labels).map(bool)
+    labels_boolean = convert_label_boolean()
 
     (train_features, train_labels), (test_features, test_labels) = split_training_test(
         features_expanded,
-        labels_binary,
+        labels_boolean,
         train_factor=DATASET_TRAIN_RATIO,
         shuffle=True,
     )
