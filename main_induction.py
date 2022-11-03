@@ -1,8 +1,9 @@
 import pandas as pd
 from dataclasses import dataclass
 
-from sklearn.metrics import accuracy_score, precision_score, recall_score
+from sklearn.metrics import precision_score, recall_score
 from sklearn.tree import DecisionTreeClassifier
+from sklearn.neighbors import KNeighborsClassifier
 
 from core.preprocessing import separate_features_label, split_training_test, expand_dataset, \
     convert_label_boolean
@@ -13,9 +14,10 @@ from core.constants import DATASET_LABEL_NAME, DATASET_TRAIN_RATIO, \
 
 @dataclass
 class ModelPerformance:
-    accuracy: float
-    precision: float
-    recall: float
+    train_accuracy: float
+    test_accuracy: float
+    test_precision: float
+    test_recall: float
 
 
 def balance_binary_dataset(train_features, train_labels):
@@ -57,16 +59,21 @@ def perform_decision_tree_induction(dataset):
 
     def evaluate_classifier(model, feature_subset=features_expanded.columns, balance=False):
         if balance:
-            train_features_balanced, train_labels_balanced = balance_binary_dataset(
+            X_train, y_train = balance_binary_dataset(
                 train_features.loc[:, feature_subset],
                 train_labels
             )
-            model.fit(train_features_balanced, train_labels_balanced)
         else:
-            model.fit(train_features.loc[:, feature_subset], train_labels)
+            X_train, y_train = (
+                train_features.loc[:, feature_subset],
+                train_labels,
+            )
 
+        model.fit(X_train, y_train)
         return evaluate_model(
             model,
+            X_train,
+            y_train,
             test_features.loc[:, feature_subset],
             test_labels,
             benchmark,
@@ -109,6 +116,9 @@ def perform_decision_tree_induction(dataset):
     print('\nEvaluating performance of 3 most significant forward stepwise feature-based DecisionTreeClassifier...')
     evaluate_classifier(DecisionTreeClassifier(), SIGNIFICANT_FORWARD_STEPWISE_FEATURES[:3])
 
+    print('\nEvaluating performance of most significant binary label feature-based KNeighborsClassifier given k=3...')
+    evaluate_classifier(KNeighborsClassifier(n_neighbors=3), SIGNIFICANT_BINARY_LABEL_FEATURES)
+
 
 def _get_delta_tag(benchmark, value):
     delta = value - (benchmark or 0)
@@ -118,7 +128,7 @@ def _get_delta_tag(benchmark, value):
     return delta_tag
 
 
-def evaluate_model(model, test_features, test_labels, benchmark=None):
+def evaluate_model(model, train_features, train_labels, test_features, test_labels, benchmark=None):
     pred_labels = model.predict(test_features)
     test_labels = list(test_labels)
 
@@ -126,17 +136,28 @@ def evaluate_model(model, test_features, test_labels, benchmark=None):
     num_predicted_accepts = sum(pred_labels)
     num_observed_accepts = sum(test_labels)
 
-    accuracy = accuracy_score(test_labels, pred_labels)
-    precision = precision_score(test_labels, pred_labels, zero_division=0)
-    recall = recall_score(test_labels, pred_labels)
+    train_accuracy = model.score(train_features, train_labels)
+    test_accuracy = model.score(test_features, test_labels)
+    test_precision = precision_score(test_labels, pred_labels, zero_division=0)
+    test_recall = recall_score(test_labels, pred_labels)
 
-    print(f'Prediction: {num_predicted_accepts}/{num_rows} claims accepted'
-        f'\nActual:     {num_observed_accepts}/{num_rows} claims accepted'
-        f'\nAccuracy:   {accuracy * 100:.2f}%{_get_delta_tag(benchmark and benchmark.accuracy, accuracy)}'
-        f'\nPrecision:  {precision * 100:.2f}%{_get_delta_tag(benchmark and benchmark.precision, precision)}'
-        f'\nRecall:     {recall * 100:.2f}%{_get_delta_tag(benchmark and benchmark.recall, recall)}')
+    print(f'Prediction:     {num_predicted_accepts}/{num_rows} claims accepted'
+        f'\nActual:         {num_observed_accepts}/{num_rows} claims accepted'
+        f'\nTrain accuracy: {train_accuracy * 100:.2f}%'
+            + _get_delta_tag(benchmark and benchmark.train_accuracy, train_accuracy) +
+        f'\nTest accuracy:  {test_accuracy * 100:.2f}%'
+            + _get_delta_tag(benchmark and benchmark.test_accuracy, test_accuracy) +
+        f'\nTest precision: {test_precision * 100:.2f}%'
+            + _get_delta_tag(benchmark and benchmark.test_precision, test_precision) +
+        f'\nTest recall:    {test_recall * 100:.2f}%'
+            + _get_delta_tag(benchmark and benchmark.test_recall, test_recall))
 
-    return ModelPerformance(accuracy, precision, recall)
+    return ModelPerformance(
+        train_accuracy,
+        test_accuracy,
+        test_precision,
+        test_recall
+    )
 
 
 if __name__ == '__main__':

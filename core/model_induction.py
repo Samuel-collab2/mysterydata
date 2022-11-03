@@ -1,6 +1,7 @@
 from math import log2
 import json
 import pandas as pd
+from sklearn.metrics import accuracy_score
 from sklearn.tree import DecisionTreeClassifier
 
 from library.graph import Graph
@@ -8,12 +9,15 @@ from library.graph import Graph
 
 class NullDecisionTreeInduction:
 
-    def fit(self, train_features: pd.DataFrame, train_label: pd.Series):
+    def fit(self, train_features: pd.DataFrame, train_labels: pd.Series):
         pass
 
     def predict(self, test_features: pd.DataFrame):
         return [False
             for i, sample in test_features.iterrows()]
+
+    def score(self, features: pd.DataFrame, labels: pd.Series):
+        return accuracy_score(self.predict(features), labels)
 
 
 class BinaryDecisionTreeInduction(NullDecisionTreeInduction):
