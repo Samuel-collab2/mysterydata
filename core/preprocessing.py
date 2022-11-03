@@ -16,12 +16,13 @@ def separate_features_label(dataset, label_column):
         dataset.loc[:, label_column],
     )
 
-def split_training_test(features, label, train_factor, shuffle=False):
+def split_training_test(features, label, train_factor, shuffle=False, seed=None):
     train_features, test_features, train_label, test_label = train_test_split(
         features,
         label,
         train_size=train_factor,
         shuffle=shuffle,
+        random_state=seed,
     )
     return (train_features, train_label), (test_features, test_label)
 
