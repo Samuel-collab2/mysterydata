@@ -1,4 +1,4 @@
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score, precision_score
 from sklearn.tree import DecisionTreeClassifier
 
 from core.preprocessing import separate_features_label, split_training_test, expand_dataset, \
@@ -11,7 +11,7 @@ from core.constants import DATASET_LABEL_NAME, DATASET_TRAIN_RATIO, \
 def perform_decision_tree_induction(dataset):
     features, labels = separate_features_label(dataset, DATASET_LABEL_NAME)
     features_expanded = expand_dataset(features)
-    labels_boolean = convert_label_boolean()
+    labels_boolean = convert_label_boolean(labels)
 
     (train_features, train_labels), (test_features, test_labels) = split_training_test(
         features_expanded,
@@ -25,63 +25,78 @@ def perform_decision_tree_induction(dataset):
             if features_expanded[column].dtype == "uint8"]
 
 
-    def evaluate_classifier(model, feature_subset=features_expanded.columns, accuracy_benchmark=None):
+    accuracy, precision = None, None
+
+    def evaluate_classifier(model, feature_subset=features_expanded.columns):
         model.fit(train_features.loc[:, feature_subset], train_labels)
-        return evaluate_model(model, test_features.loc[:, feature_subset], test_labels, accuracy_benchmark)
+        return evaluate_model(
+            model,
+            test_features.loc[:, feature_subset],
+            test_labels,
+            accuracy,
+            precision,
+        )
 
 
     print('\nEvaluating performance of null induction model...')
-    accuracy = evaluate_classifier(NullDecisionTreeInduction())
+    accuracy, precision = evaluate_classifier(NullDecisionTreeInduction())
 
     print('\nEvaluating performance of base DecisionTreeClassifier...')
-    evaluate_classifier(DecisionTreeClassifier(), accuracy_benchmark=accuracy)
+    evaluate_classifier(DecisionTreeClassifier())
 
     print('\nEvaluating performance of entropy-based DecisionTreeClassifier...')
-    evaluate_classifier(DecisionTreeClassifier(criterion='entropy'), accuracy_benchmark=accuracy)
+    evaluate_classifier(DecisionTreeClassifier(criterion='entropy'))
 
     print('\nEvaluating performance of categorical DecisionTreeClassifier...')
-    evaluate_classifier(DecisionTreeClassifier(), categorical_columns, accuracy_benchmark=accuracy)
+    evaluate_classifier(DecisionTreeClassifier(), categorical_columns)
 
     print('\nEvaluating performance of categorical entropy-based DecisionTreeClassifier...')
-    evaluate_classifier(DecisionTreeClassifier(criterion='entropy'), categorical_columns, accuracy_benchmark=accuracy)
+    evaluate_classifier(DecisionTreeClassifier(criterion='entropy'), categorical_columns)
 
     print('\nEvaluating performance of most significant binary label feature-based DecisionTreeClassifier...')
-    evaluate_classifier(DecisionTreeClassifier(), SIGNIFICANT_BINARY_LABEL_FEATURES, accuracy_benchmark=accuracy)
+    evaluate_classifier(DecisionTreeClassifier(), SIGNIFICANT_BINARY_LABEL_FEATURES)
 
     print('\nEvaluating performance of 7 most significant binary label feature-based DecisionTreeClassifier...')
-    evaluate_classifier(DecisionTreeClassifier(), SIGNIFICANT_BINARY_LABEL_FEATURES[:7], accuracy_benchmark=accuracy)
+    evaluate_classifier(DecisionTreeClassifier(), SIGNIFICANT_BINARY_LABEL_FEATURES[:7])
 
     print('\nEvaluating performance of 3 most significant binary label feature-based DecisionTreeClassifier...')
-    evaluate_classifier(DecisionTreeClassifier(), SIGNIFICANT_BINARY_LABEL_FEATURES[:3], accuracy_benchmark=accuracy)
+    evaluate_classifier(DecisionTreeClassifier(), SIGNIFICANT_BINARY_LABEL_FEATURES[:3])
 
     print('\nEvaluating performance of most significant forward stepwise feature-based DecisionTreeClassifier...')
-    evaluate_classifier(DecisionTreeClassifier(), SIGNIFICANT_FORWARD_STEPWISE_FEATURES, accuracy_benchmark=accuracy)
+    evaluate_classifier(DecisionTreeClassifier(), SIGNIFICANT_FORWARD_STEPWISE_FEATURES)
 
     print('\nEvaluating performance of 7 most significant forward stepwise feature-based DecisionTreeClassifier...')
-    evaluate_classifier(DecisionTreeClassifier(), SIGNIFICANT_FORWARD_STEPWISE_FEATURES[:7], accuracy_benchmark=accuracy)
+    evaluate_classifier(DecisionTreeClassifier(), SIGNIFICANT_FORWARD_STEPWISE_FEATURES[:7])
 
     print('\nEvaluating performance of 3 most significant forward stepwise feature-based DecisionTreeClassifier...')
-    evaluate_classifier(DecisionTreeClassifier(), SIGNIFICANT_FORWARD_STEPWISE_FEATURES[:3], accuracy_benchmark=accuracy)
+    evaluate_classifier(DecisionTreeClassifier(), SIGNIFICANT_FORWARD_STEPWISE_FEATURES[:3])
 
 
-def evaluate_model(model, test_features, test_labels, accuracy_benchmark=None):
+def _get_delta_tag(benchmark, value):
+    delta = value - (benchmark or 0)
+    delta_tag = (f' ({"+" if delta >= 0 else ""}{delta * 100:.2f}%)'
+        if benchmark is not None
+        else '')
+    return delta_tag
+
+
+def evaluate_model(model, test_features, test_labels, accuracy_benchmark=None, precision_benchmark=None):
     pred_labels = model.predict(test_features)
     test_labels = list(test_labels)
 
     num_rows = len(test_features)
     num_predicted_accepts = sum(pred_labels)
     num_observed_accepts = sum(test_labels)
+
     accuracy = accuracy_score(test_labels, pred_labels)
-    accuracy_delta = accuracy - (accuracy_benchmark or 0)
-    accuracy_delta_tag = (f' ({"+" if accuracy_delta >= 0 else ""}{accuracy_delta * 100:.2f}%)'
-        if accuracy_benchmark is not None
-        else '')
+    precision = precision_score(test_labels, pred_labels)
 
     print(f'Prediction: {num_predicted_accepts}/{num_rows} claims accepted'
         f'\nActual:     {num_observed_accepts}/{num_rows} claims accepted'
-        f'\nAccuracy:   {accuracy * 100:.2f}%{accuracy_delta_tag}')
+        f'\nAccuracy:   {accuracy * 100:.2f}%{_get_delta_tag(accuracy_benchmark, accuracy)}'
+        f'\nPrecision:  {precision * 100:.2f}%{_get_delta_tag(precision_benchmark, precision)}')
 
-    return accuracy
+    return accuracy, precision
 
 
 if __name__ == '__main__':
