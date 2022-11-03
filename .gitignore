@@ -3,4 +3,5 @@ __pycache__/
 .vscode/
 .DS_Store/
 dist/
+submission*/
 *.csv
