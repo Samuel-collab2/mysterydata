@@ -1,9 +1,12 @@
 import pandas as pd
 from dataclasses import dataclass
+from itertools import product
 
 from sklearn.metrics import precision_score, recall_score
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.neighbors import KNeighborsClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.svm import LinearSVC
 
 from core.preprocessing import separate_features_label, split_training_test, expand_dataset, \
     convert_label_boolean
@@ -20,7 +23,29 @@ class ModelPerformance:
     test_recall: float
 
 
-def balance_binary_dataset(train_features, train_labels):
+models = [
+    (NullDecisionTreeInduction, {}),
+    (DecisionTreeClassifier, {}),
+    (DecisionTreeClassifier, {'max_depth': 20}),
+    (RandomForestClassifier, {'n_estimators': 30}),
+    (RandomForestClassifier, {'n_estimators': 30, 'max_depth': 20}),
+    (KNeighborsClassifier, {'n_neighbors': 3}),
+]
+
+modifiers = {
+    'feature_subset': (SIGNIFICANT_BINARY_LABEL_FEATURES,
+        SIGNIFICANT_BINARY_LABEL_FEATURES[:3],
+        SIGNIFICANT_FORWARD_STEPWISE_FEATURES,
+        SIGNIFICANT_FORWARD_STEPWISE_FEATURES[:3]),
+    'balance': (False, True),
+}
+
+
+def _format_kwargs(**kwargs):
+    return ', '.join([f'{key}={value}'
+        for key, value in kwargs.items()])
+
+def _balance_binary_dataset(train_features, train_labels):
     dataset_label_name = train_labels.name
 
     train_samples = pd.concat((train_features, train_labels), axis='columns')
@@ -36,6 +61,7 @@ def balance_binary_dataset(train_features, train_labels):
     print(f'Balance training set with {min_samples} accepted samples and {min_samples} rejected samples')
     train_features, train_labels = separate_features_label(train_samples, dataset_label_name)
     return train_features, train_labels
+
 
 def perform_decision_tree_induction(dataset):
     features, labels = separate_features_label(dataset, DATASET_LABEL_NAME)
@@ -59,7 +85,7 @@ def perform_decision_tree_induction(dataset):
 
     def evaluate_classifier(model, feature_subset=features_expanded.columns, balance=False):
         if balance:
-            X_train, y_train = balance_binary_dataset(
+            X_train, y_train = _balance_binary_dataset(
                 train_features.loc[:, feature_subset],
                 train_labels
             )
@@ -83,41 +109,13 @@ def perform_decision_tree_induction(dataset):
     print('\nEvaluating performance of null induction model...')
     benchmark = evaluate_classifier(NullDecisionTreeInduction())
 
-    print('\nEvaluating performance of base DecisionTreeClassifier...')
-    evaluate_classifier(DecisionTreeClassifier())
-
-    print('\nEvaluating performance of base DecisionTreeClassifier with balanced dataset...')
-    evaluate_classifier(DecisionTreeClassifier(), balance=True)
-
-    print('\nEvaluating performance of entropy-based DecisionTreeClassifier...')
-    evaluate_classifier(DecisionTreeClassifier(criterion='entropy'))
-
-    print('\nEvaluating performance of categorical DecisionTreeClassifier...')
-    evaluate_classifier(DecisionTreeClassifier(), categorical_columns)
-
-    print('\nEvaluating performance of categorical entropy-based DecisionTreeClassifier...')
-    evaluate_classifier(DecisionTreeClassifier(criterion='entropy'), categorical_columns)
-
-    print('\nEvaluating performance of most significant binary label feature-based DecisionTreeClassifier...')
-    evaluate_classifier(DecisionTreeClassifier(), SIGNIFICANT_BINARY_LABEL_FEATURES)
-
-    print('\nEvaluating performance of most significant binary label feature-based DecisionTreeClassifier with balanced dataset...')
-    evaluate_classifier(DecisionTreeClassifier(), SIGNIFICANT_BINARY_LABEL_FEATURES, balance=True)
-
-    print('\nEvaluating performance of 3 most significant binary label feature-based DecisionTreeClassifier...')
-    evaluate_classifier(DecisionTreeClassifier(), SIGNIFICANT_BINARY_LABEL_FEATURES[:3])
-
-    print('\nEvaluating performance of most significant forward stepwise feature-based DecisionTreeClassifier...')
-    evaluate_classifier(DecisionTreeClassifier(), SIGNIFICANT_FORWARD_STEPWISE_FEATURES)
-
-    print('\nEvaluating performance of most significant forward stepwise feature-based DecisionTreeClassifier with balanced dataset...')
-    evaluate_classifier(DecisionTreeClassifier(), SIGNIFICANT_FORWARD_STEPWISE_FEATURES, balance=True)
-
-    print('\nEvaluating performance of 3 most significant forward stepwise feature-based DecisionTreeClassifier...')
-    evaluate_classifier(DecisionTreeClassifier(), SIGNIFICANT_FORWARD_STEPWISE_FEATURES[:3])
-
-    print('\nEvaluating performance of most significant binary label feature-based KNeighborsClassifier given k=3...')
-    evaluate_classifier(KNeighborsClassifier(n_neighbors=3), SIGNIFICANT_BINARY_LABEL_FEATURES)
+    for model_type, model_args in models:
+        for modifier_values in product(*modifiers.values()):
+            model = model_type(**model_args)
+            eval_args = dict(zip(modifiers.keys(), modifier_values))
+            formatted_args = _format_kwargs(**model_args, **eval_args)
+            print(f'\nEvaluate {model_type.__name__}({formatted_args})')
+            evaluate_classifier(model, **eval_args)
 
 
 def _get_delta_tag(benchmark, value):
