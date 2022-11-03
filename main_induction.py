@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+
 from sklearn.metrics import accuracy_score, precision_score
 from sklearn.tree import DecisionTreeClassifier
 
@@ -6,6 +8,12 @@ from core.preprocessing import separate_features_label, split_training_test, exp
 from core.model_induction import NullDecisionTreeInduction
 from core.constants import DATASET_LABEL_NAME, DATASET_TRAIN_RATIO, \
     SIGNIFICANT_BINARY_LABEL_FEATURES, SIGNIFICANT_FORWARD_STEPWISE_FEATURES
+
+
+@dataclass
+class ModelPerformance:
+    accuracy: float
+    precision: float
 
 
 def perform_decision_tree_induction(dataset):
@@ -25,7 +33,7 @@ def perform_decision_tree_induction(dataset):
             if features_expanded[column].dtype == "uint8"]
 
 
-    accuracy, precision = None, None
+    benchmark = None
 
     def evaluate_classifier(model, feature_subset=features_expanded.columns):
         model.fit(train_features.loc[:, feature_subset], train_labels)
@@ -33,13 +41,12 @@ def perform_decision_tree_induction(dataset):
             model,
             test_features.loc[:, feature_subset],
             test_labels,
-            accuracy,
-            precision,
+            benchmark,
         )
 
 
     print('\nEvaluating performance of null induction model...')
-    accuracy, precision = evaluate_classifier(NullDecisionTreeInduction())
+    benchmark = evaluate_classifier(NullDecisionTreeInduction())
 
     print('\nEvaluating performance of base DecisionTreeClassifier...')
     evaluate_classifier(DecisionTreeClassifier())
@@ -80,7 +87,7 @@ def _get_delta_tag(benchmark, value):
     return delta_tag
 
 
-def evaluate_model(model, test_features, test_labels, accuracy_benchmark=None, precision_benchmark=None):
+def evaluate_model(model, test_features, test_labels, benchmark=None):
     pred_labels = model.predict(test_features)
     test_labels = list(test_labels)
 
@@ -89,14 +96,14 @@ def evaluate_model(model, test_features, test_labels, accuracy_benchmark=None, p
     num_observed_accepts = sum(test_labels)
 
     accuracy = accuracy_score(test_labels, pred_labels)
-    precision = precision_score(test_labels, pred_labels)
+    precision = precision_score(test_labels, pred_labels, zero_division=0)
 
     print(f'Prediction: {num_predicted_accepts}/{num_rows} claims accepted'
         f'\nActual:     {num_observed_accepts}/{num_rows} claims accepted'
-        f'\nAccuracy:   {accuracy * 100:.2f}%{_get_delta_tag(accuracy_benchmark, accuracy)}'
-        f'\nPrecision:  {precision * 100:.2f}%{_get_delta_tag(precision_benchmark, precision)}')
+        f'\nAccuracy:   {accuracy * 100:.2f}%{_get_delta_tag(benchmark and benchmark.accuracy, accuracy)}'
+        f'\nPrecision:  {precision * 100:.2f}%{_get_delta_tag(benchmark and benchmark.precision, precision)}')
 
-    return accuracy, precision
+    return ModelPerformance(accuracy, precision)
 
 
 if __name__ == '__main__':
