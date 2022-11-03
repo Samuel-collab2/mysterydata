@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from sklearn.metrics import accuracy_score, precision_score
+from sklearn.metrics import accuracy_score, precision_score, recall_score
 from sklearn.tree import DecisionTreeClassifier
 
 from core.preprocessing import separate_features_label, split_training_test, expand_dataset, \
@@ -14,6 +14,7 @@ from core.constants import DATASET_LABEL_NAME, DATASET_TRAIN_RATIO, \
 class ModelPerformance:
     accuracy: float
     precision: float
+    recall: float
 
 
 def perform_decision_tree_induction(dataset):
@@ -97,13 +98,15 @@ def evaluate_model(model, test_features, test_labels, benchmark=None):
 
     accuracy = accuracy_score(test_labels, pred_labels)
     precision = precision_score(test_labels, pred_labels, zero_division=0)
+    recall = recall_score(test_labels, pred_labels)
 
     print(f'Prediction: {num_predicted_accepts}/{num_rows} claims accepted'
         f'\nActual:     {num_observed_accepts}/{num_rows} claims accepted'
         f'\nAccuracy:   {accuracy * 100:.2f}%{_get_delta_tag(benchmark and benchmark.accuracy, accuracy)}'
-        f'\nPrecision:  {precision * 100:.2f}%{_get_delta_tag(benchmark and benchmark.precision, precision)}')
+        f'\nPrecision:  {precision * 100:.2f}%{_get_delta_tag(benchmark and benchmark.precision, precision)}'
+        f'\nRecall:     {recall * 100:.2f}%{_get_delta_tag(benchmark and benchmark.recall, recall)}')
 
-    return ModelPerformance(accuracy, precision)
+    return ModelPerformance(accuracy, precision, recall)
 
 
 if __name__ == '__main__':
