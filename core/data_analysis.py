@@ -3,13 +3,19 @@ from itertools import combinations
 
 import numpy as np
 from sklearn.metrics import mean_absolute_error
+from sklearn.model_selection import KFold
 
 from core.constants import ANALYSIS_LASSO_LAMBDAS, ANALYSIS_RIDGE_LAMBDAS, ANALYSIS_CROSS_VALIDATION_SETS, \
     ANALYSIS_POLYNOMIAL_DEGREES, ANALYSIS_SIGNIFICANT_FEATURE_COUNT, ANALYSIS_CORRELATION_THRESHOLD
 from core.model_regression import train_linear_regression, train_polynomial_regression, train_lasso_regression, \
     train_ridge_regression
-from core.preprocessing import enumerate_cross_validation_sets, zip_sort
+from library.sort import zip_sort
 
+
+def enumerate_cross_validation_sets(features, label, sets):
+    kf = KFold(n_splits=sets)
+    for train_indices, valid_indices in kf.split(features, label):
+        yield features.iloc[train_indices], label.iloc[train_indices], features.iloc[valid_indices], label.iloc[valid_indices]
 
 def cross_validate_model(train_model, features, label, sets):
     train_errors = []
@@ -96,7 +102,7 @@ def perform_polynomial_complexity_analysis(train_data, test_data):
         train_data,
         test_data,
         range(1, ANALYSIS_POLYNOMIAL_DEGREES + 1),
-        "degree"
+        'degree'
     )
 
 def _perform_lambda_analysis(train_model, train_data, test_data, lambdas):
@@ -106,14 +112,14 @@ def _perform_lambda_analysis(train_model, train_data, test_data, lambdas):
         train_data,
         test_data,
         lambdas,
-        "lambda"
+        'lambda'
     )
 
     coefficients, columns = zip_sort(model.coef_, train_features.columns, comparator=lambda x: abs(x[0]), reverse=True)
 
     print(f'{ANALYSIS_SIGNIFICANT_FEATURE_COUNT} Most significant columns at lambda={model.alpha}')
     for i in range(ANALYSIS_SIGNIFICANT_FEATURE_COUNT + 1):
-        print(f"{columns[i]}: {coefficients[i]:.4f}")
+        print(f'{columns[i]}: {coefficients[i]:.4f}')
 
 def perform_lasso_lambda_analysis(train_data, test_data):
     print('Performing lasso lambda analysis...')

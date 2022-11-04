@@ -12,6 +12,9 @@ def load_standardized_train_dataset():
 def load_test_dataset():
     return _read_dataset_file(DATASET_TEST_PATH)
 
+def load_determining_dataset():
+    return load_train_dataset()
+
 def _read_dataset_file(filepath):
     return pd.read_csv(filepath, low_memory=False)
 

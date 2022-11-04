@@ -2,10 +2,10 @@ from core.constants import DATASET_LABEL_NAME, DATASET_TRAIN_RATIO, MENU_EXIT, M
 from core.data_analysis import perform_linear_regression_analysis, perform_polynomial_complexity_analysis, \
     perform_lasso_lambda_analysis, perform_ridge_lambda_analysis, perform_feature_correlation_analysis
 from core.data_visualization import generate_data_visualization_plots
-from core.loader import load_train_dataset, load_standardized_train_dataset
+from core.loader import load_train_dataset, load_standardized_train_dataset, load_determining_dataset
 from core.predict import predict_submission1_ridge, predict_submission1_propagation
 from core.preprocessing import split_training_test, split_claims_accept_reject, \
-    separate_features_label, convert_label_binary, expand_dataset
+    separate_features_label, convert_label_binary, get_categorical_columns, expand_dataset_deterministic
 from library.option_input import OptionInput
 from main_induction import perform_decision_tree_induction
 
@@ -29,17 +29,19 @@ def run_dataset_menu():
 def main():
     dataset_raw = run_dataset_menu()
 
-    raw_data = separate_features_label(dataset_raw, DATASET_LABEL_NAME)
-    raw_features, raw_label = raw_data
+    raw_features, raw_label = separate_features_label(dataset_raw, DATASET_LABEL_NAME)
 
-    dataset = expand_dataset(dataset_raw)
-    features, label = separate_features_label(dataset, DATASET_LABEL_NAME)
+    categorical_columns = get_categorical_columns(raw_features)
+    dataset = expand_dataset_deterministic(dataset_raw, load_determining_dataset(), categorical_columns)
 
-    binary_label = convert_label_binary(label)
+    expanded_features, expanded_label = separate_features_label(dataset, DATASET_LABEL_NAME)
 
-    accept_data, reject_data = split_claims_accept_reject(features, label)
-    accept_features, accept_label = accept_data
-    reject_features, reject_label = reject_data
+    binary_label = convert_label_binary(expanded_label)
+
+    (accept_features, accept_label), (reject_features, reject_label) = split_claims_accept_reject(
+        expanded_features,
+        expanded_label
+    )
 
     def run_dev_test():
         # Intended for temporary development tests
@@ -47,7 +49,7 @@ def main():
         pass
 
     def prediction_menu():
-        run_menu("Model prediction menu", [
+        run_menu('Model prediction menu', [
             ('Submission 1 - Ridge', lambda: predict_submission1_ridge(dataset_raw)),
             ('Submission 1 - Propagation', lambda: predict_submission1_propagation(dataset_raw)),
             MENU_RETURN
@@ -72,8 +74,8 @@ def main():
 
     def data_selection_menu(title, on_select):
         run_menu(title, [
-            ('Expanded - Data', lambda: on_select(features, label)),
-            ('Expanded - Binary label data', lambda: on_select(features, binary_label)),
+            ('Expanded - Data', lambda: on_select(expanded_features, expanded_label)),
+            ('Expanded - Binary label data', lambda: on_select(expanded_features, binary_label)),
             ('Expanded - Accepted claim data', lambda: on_select(accept_features, accept_label)),
             ('Expanded - Rejected claim data', lambda: on_select(reject_features, reject_label)),
             ('Raw - Data', lambda: on_select(raw_features, raw_label)),
@@ -89,11 +91,11 @@ def main():
             ),
             (
                 'Generate data visualization plots',
-                lambda: data_selection_menu("Select Visualization Data", generate_data_visualization_plots)
+                lambda: data_selection_menu('Select Visualization Data', generate_data_visualization_plots)
             ),
             (
                 'Perform data analysis',
-                lambda: data_selection_menu("Select Analysis Data", analysis_menu)
+                lambda: data_selection_menu('Select Analysis Data', analysis_menu)
             ),
             (
                 'Run model prediction',

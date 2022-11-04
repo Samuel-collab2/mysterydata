@@ -3,61 +3,28 @@ from os import path
 import pandas as pd
 from sklearn.metrics import mean_absolute_error
 
-from core.constants import SUBMISSION_SAMPLE_COUNT, DATASET_LABEL_NAME, OUTPUT_DIR
-from core.loader import load_test_dataset
+from core.constants import DATASET_LABEL_NAME, OUTPUT_DIR, SIGNIFICANT_RIDGE_FEATURES, \
+    SIGNIFICANT_FORWARD_STEPWISE_FEATURES, SIGNIFICANT_FEATURE_SET_COUNTS
+from core.loader import load_test_dataset, load_determining_dataset
 from core.model_composite import train_composite
 from core.preprocessing import separate_features_label, \
-    split_claims_accept_reject, expand_dataset
+    split_claims_accept_reject, expand_dataset_deterministic, get_categorical_columns
 
-SIGNIFICANT_RIDGE_COUNTS = [1, 3, 5, 7, 10]
-SIGNIFICANT_RIDGE_FEATURES = [
-    'feature1',
-    'feature3_8',
-    'feature15_6',
-    'feature10',
-    'feature14_3',
-    'feature14_1',
-    'feature3_1',
-    'feature15_5',
-    'feature11_4',
-    'feature16_5',
-    'feature15_4'
-]
 
-SIGNIFICANT_PROPAGATION_COUNTS = [3, 5, 10, 15, 20]
-SIGNIFICANT_PROPAGATION_FEATURES = [
-    'feature1',
-    'feature15_4',
-    'feature3_8',
-    'feature17',
-    'feature15_6',
-    'feature13_2',
-    'feature15_1',
-    'feature18_1',
-    'feature7_2',
-    'feature7_3',
-    'feature9_0',
-    'feature15_8',
-    'feature15_2',
-    'feature11_6',
-    'feature3_4',
-    'feature3_6',
-    'feature10',
-    'feature13_3',
-    'feature9_1',
-    'feature13_0'
-]
-
-def _get_submission_features():
-    dataset = load_test_dataset()
-    return dataset.sample(n=SUBMISSION_SAMPLE_COUNT)
+def _get_submission_dataset():
+    return load_test_dataset()
 
 def _get_submission_data(dataset):
     raw_train_dataset = dataset
-    raw_test_features = _get_submission_features()
+    raw_test_features = _get_submission_dataset()
 
+    categorical_columns = get_categorical_columns(raw_train_dataset)
     combined_dataset = pd.concat([raw_train_dataset, raw_test_features], axis=0)
-    combined_expanded_dataset = expand_dataset(combined_dataset)
+    combined_expanded_dataset = expand_dataset_deterministic(
+        combined_dataset,
+        load_determining_dataset(),
+        categorical_columns
+    )
 
     train_dataset_length = len(raw_train_dataset)
     expanded_train_dataset = combined_expanded_dataset.iloc[:train_dataset_length]
@@ -134,14 +101,14 @@ def predict_submission1_ridge(dataset):
     feature_sets = [
         SIGNIFICANT_RIDGE_FEATURES[:feature_count]
         for feature_count
-        in SIGNIFICANT_RIDGE_COUNTS
+        in SIGNIFICANT_FEATURE_SET_COUNTS
     ]
     _predict_feature_sets(dataset, feature_sets, 'submission1_ridge')
 
 def predict_submission1_propagation(dataset):
     feature_sets = [
-        SIGNIFICANT_PROPAGATION_FEATURES[:feature_count]
+        SIGNIFICANT_FORWARD_STEPWISE_FEATURES[:feature_count]
         for feature_count
-        in SIGNIFICANT_PROPAGATION_COUNTS
+        in SIGNIFICANT_FEATURE_SET_COUNTS
     ]
     _predict_feature_sets(dataset, feature_sets, 'submission1_propagation')

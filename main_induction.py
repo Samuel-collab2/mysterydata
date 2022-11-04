@@ -1,8 +1,8 @@
 from sklearn.metrics import accuracy_score
 from sklearn.tree import DecisionTreeClassifier
 
-from core.preprocessing import separate_features_label, split_training_test, expand_dataset, \
-    convert_label_boolean
+from core.preprocessing import separate_features_label, split_training_test, \
+    convert_label_boolean, get_categorical_columns, expand_dataset_deterministic
 from core.model_induction import NullDecisionTreeInduction
 from core.constants import DATASET_LABEL_NAME, DATASET_TRAIN_RATIO, \
     SIGNIFICANT_BINARY_LABEL_FEATURES, SIGNIFICANT_FORWARD_STEPWISE_FEATURES
@@ -10,8 +10,12 @@ from core.constants import DATASET_LABEL_NAME, DATASET_TRAIN_RATIO, \
 
 def perform_decision_tree_induction(dataset):
     features, labels = separate_features_label(dataset, DATASET_LABEL_NAME)
-    features_expanded = expand_dataset(features)
-    labels_boolean = convert_label_boolean()
+    determining_features, _ = separate_features_label(load_determining_dataset(), DATASET_LABEL_NAME)
+
+    categorical_columns = get_categorical_columns(dataset)
+
+    features_expanded = expand_dataset_deterministic(features, determining_features, categorical_columns)
+    labels_boolean = convert_label_boolean(labels)
 
     (train_features, train_labels), (test_features, test_labels) = split_training_test(
         features_expanded,
@@ -20,10 +24,9 @@ def perform_decision_tree_induction(dataset):
         shuffle=True,
     )
 
-    categorical_columns = [column
+    expanded_categorical_columns = [column
         for column in features_expanded.columns
             if features_expanded[column].dtype == "uint8"]
-
 
     def evaluate_classifier(model, feature_subset=features_expanded.columns, accuracy_benchmark=None):
         model.fit(train_features.loc[:, feature_subset], train_labels)
@@ -40,10 +43,10 @@ def perform_decision_tree_induction(dataset):
     evaluate_classifier(DecisionTreeClassifier(criterion='entropy'), accuracy_benchmark=accuracy)
 
     print('\nEvaluating performance of categorical DecisionTreeClassifier...')
-    evaluate_classifier(DecisionTreeClassifier(), categorical_columns, accuracy_benchmark=accuracy)
+    evaluate_classifier(DecisionTreeClassifier(), expanded_categorical_columns, accuracy_benchmark=accuracy)
 
     print('\nEvaluating performance of categorical entropy-based DecisionTreeClassifier...')
-    evaluate_classifier(DecisionTreeClassifier(criterion='entropy'), categorical_columns, accuracy_benchmark=accuracy)
+    evaluate_classifier(DecisionTreeClassifier(criterion='entropy'), expanded_categorical_columns, accuracy_benchmark=accuracy)
 
     print('\nEvaluating performance of most significant binary label feature-based DecisionTreeClassifier...')
     evaluate_classifier(DecisionTreeClassifier(), SIGNIFICANT_BINARY_LABEL_FEATURES, accuracy_benchmark=accuracy)
@@ -85,5 +88,6 @@ def evaluate_model(model, test_features, test_labels, accuracy_benchmark=None):
 
 
 if __name__ == '__main__':
-    from core.loader import load_train_dataset
+    from core.loader import load_train_dataset, load_determining_dataset
+
     perform_decision_tree_induction(dataset=load_train_dataset())
