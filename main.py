@@ -1,4 +1,5 @@
-from core.constants import DATASET_LABEL_NAME, DATASET_TRAIN_RATIO, MENU_EXIT, MENU_RETURN
+from core.constants import DATASET_LABEL_NAME, DATASET_TRAIN_RATIO, MENU_EXIT, MENU_RETURN, SIGNIFICANT_RIDGE_COLUMNS, \
+    SIGNIFICANT_BINARY_LABEL_COLUMNS, SIGNIFICANT_FORWARD_STEPWISE_COLUMNS, SIGNIFICANT_FEATURE_SET_COUNTS
 from core.data_analysis import perform_linear_regression_analysis, perform_polynomial_complexity_analysis, \
     perform_lasso_lambda_analysis, perform_ridge_lambda_analysis, perform_feature_correlation_analysis
 from core.data_visualization import generate_data_visualization_plots
@@ -50,8 +51,8 @@ def main():
 
     def prediction_menu():
         run_menu('Model prediction menu', [
-            ('Submission 1 - Ridge', lambda: predict_submission1_ridge(dataset_raw)),
-            ('Submission 1 - Propagation', lambda: predict_submission1_propagation(dataset_raw)),
+            ('Submission 1: Ridge', lambda: predict_submission1_ridge(dataset_raw)),
+            ('Submission 1: Propagation', lambda: predict_submission1_propagation(dataset_raw)),
             MENU_RETURN
         ])
 
@@ -62,7 +63,7 @@ def main():
             DATASET_TRAIN_RATIO
         )
 
-        run_menu('Data Analysis Menu', [
+        run_menu('Data analysis menu', [
             ('Perform feature correlation analysis', lambda: perform_feature_correlation_analysis(features)),
             ('Perform linear regression analysis', lambda: perform_linear_regression_analysis(train_data, test_data)),
             ('Perform polynomial complexity analysis', lambda: perform_polynomial_complexity_analysis(train_data, test_data)),
@@ -72,30 +73,60 @@ def main():
             MENU_RETURN
         ])
 
+    def featureset_menu(features, label, on_select):
+        def select_features(features, label, feature_columns):
+            return lambda: feature_count_menu(lambda count: on_select(
+                features.loc[:, feature_columns[:count]],
+                label
+            ))
+
+        def feature_count_menu(on_select):
+            def get_option(count):
+                return f'{count}', lambda: on_select(count)
+
+            run_menu("Select feature set count", [
+                *[
+                    get_option(count) for count
+                    in SIGNIFICANT_FEATURE_SET_COUNTS
+                ],
+                MENU_RETURN,
+            ])
+
+        run_menu("Select feature set", [
+            ('All', lambda: on_select(features, label)),
+            ('Significant: Ridge', select_features(features, label, SIGNIFICANT_RIDGE_COLUMNS)),
+            ('Significant: Ridge binary label', select_features(features, label, SIGNIFICANT_BINARY_LABEL_COLUMNS)),
+            ('Significant: Forward stepwise', select_features(features, label, SIGNIFICANT_FORWARD_STEPWISE_COLUMNS)),
+            MENU_RETURN
+        ])
+
     def data_selection_menu(title, on_select):
+        def select_featureset(features, label):
+            return lambda: featureset_menu(features, label, on_select)
+
         run_menu(title, [
-            ('Expanded - Data', lambda: on_select(expanded_features, expanded_label)),
-            ('Expanded - Binary label data', lambda: on_select(expanded_features, binary_label)),
-            ('Expanded - Accepted claim data', lambda: on_select(accept_features, accept_label)),
-            ('Expanded - Rejected claim data', lambda: on_select(reject_features, reject_label)),
-            ('Raw - Data', lambda: on_select(raw_features, raw_label)),
-            ('Raw - Binary label data', lambda: on_select(raw_features, binary_label)),
+            ('Expanded: Data', select_featureset(expanded_features, expanded_label)),
+            ('Expanded: Binary label data', select_featureset(expanded_features, binary_label)),
+            ('Expanded: Accepted claim data', select_featureset(accept_features, accept_label)),
+            ('Expanded: Rejected claim data', select_featureset(reject_features, reject_label)),
+            ('Raw: Data', lambda: on_select(raw_features, raw_label)),
+            ('Raw: Binary label data', lambda: on_select(raw_features, binary_label)),
             MENU_RETURN
         ])
 
     def main_menu():
-        run_menu('Main Menu', [
+        run_menu('Main menu', [
             (
                 'Run dev test',
                 run_dev_test
             ),
             (
                 'Generate data visualization plots',
-                lambda: data_selection_menu('Select Visualization Data', generate_data_visualization_plots)
+                lambda: data_selection_menu('Select visualization data', generate_data_visualization_plots)
             ),
             (
                 'Perform data analysis',
-                lambda: data_selection_menu('Select Analysis Data', analysis_menu)
+                lambda: data_selection_menu('Select analysis data', analysis_menu)
             ),
             (
                 'Run model prediction',

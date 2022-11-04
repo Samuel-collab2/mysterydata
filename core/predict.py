@@ -3,8 +3,8 @@ from os import path
 import pandas as pd
 from sklearn.metrics import mean_absolute_error
 
-from core.constants import DATASET_LABEL_NAME, OUTPUT_DIR, SIGNIFICANT_RIDGE_FEATURES, \
-    SIGNIFICANT_FORWARD_STEPWISE_FEATURES, SIGNIFICANT_FEATURE_SET_COUNTS
+from core.constants import DATASET_LABEL_NAME, OUTPUT_DIR, SIGNIFICANT_RIDGE_COLUMNS, \
+    SIGNIFICANT_FORWARD_STEPWISE_COLUMNS, SIGNIFICANT_FEATURE_SET_COUNTS
 from core.loader import load_test_dataset, load_determining_dataset
 from core.model_composite import train_composite
 from core.preprocessing import separate_features_label, \
@@ -99,7 +99,7 @@ def _predict_feature_sets(dataset, feature_sets, file_prefix):
 
 def predict_submission1_ridge(dataset):
     feature_sets = [
-        SIGNIFICANT_RIDGE_FEATURES[:feature_count]
+        SIGNIFICANT_RIDGE_COLUMNS[:feature_count]
         for feature_count
         in SIGNIFICANT_FEATURE_SET_COUNTS
     ]
@@ -107,7 +107,7 @@ def predict_submission1_ridge(dataset):
 
 def predict_submission1_propagation(dataset):
     feature_sets = [
-        SIGNIFICANT_FORWARD_STEPWISE_FEATURES[:feature_count]
+        SIGNIFICANT_FORWARD_STEPWISE_COLUMNS[:feature_count]
         for feature_count
         in SIGNIFICANT_FEATURE_SET_COUNTS
     ]

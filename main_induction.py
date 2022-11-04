@@ -5,7 +5,7 @@ from core.preprocessing import separate_features_label, split_training_test, \
     convert_label_boolean, get_categorical_columns, expand_dataset_deterministic
 from core.model_induction import NullDecisionTreeInduction
 from core.constants import DATASET_LABEL_NAME, DATASET_TRAIN_RATIO, \
-    SIGNIFICANT_BINARY_LABEL_FEATURES, SIGNIFICANT_FORWARD_STEPWISE_FEATURES
+    SIGNIFICANT_BINARY_LABEL_COLUMNS, SIGNIFICANT_FORWARD_STEPWISE_COLUMNS
 
 
 def perform_decision_tree_induction(dataset):
@@ -49,22 +49,22 @@ def perform_decision_tree_induction(dataset):
     evaluate_classifier(DecisionTreeClassifier(criterion='entropy'), expanded_categorical_columns, accuracy_benchmark=accuracy)
 
     print('\nEvaluating performance of most significant binary label feature-based DecisionTreeClassifier...')
-    evaluate_classifier(DecisionTreeClassifier(), SIGNIFICANT_BINARY_LABEL_FEATURES, accuracy_benchmark=accuracy)
+    evaluate_classifier(DecisionTreeClassifier(), SIGNIFICANT_BINARY_LABEL_COLUMNS, accuracy_benchmark=accuracy)
 
     print('\nEvaluating performance of 7 most significant binary label feature-based DecisionTreeClassifier...')
-    evaluate_classifier(DecisionTreeClassifier(), SIGNIFICANT_BINARY_LABEL_FEATURES[:7], accuracy_benchmark=accuracy)
+    evaluate_classifier(DecisionTreeClassifier(), SIGNIFICANT_BINARY_LABEL_COLUMNS[:7], accuracy_benchmark=accuracy)
 
     print('\nEvaluating performance of 3 most significant binary label feature-based DecisionTreeClassifier...')
-    evaluate_classifier(DecisionTreeClassifier(), SIGNIFICANT_BINARY_LABEL_FEATURES[:3], accuracy_benchmark=accuracy)
+    evaluate_classifier(DecisionTreeClassifier(), SIGNIFICANT_BINARY_LABEL_COLUMNS[:3], accuracy_benchmark=accuracy)
 
     print('\nEvaluating performance of most significant forward stepwise feature-based DecisionTreeClassifier...')
-    evaluate_classifier(DecisionTreeClassifier(), SIGNIFICANT_FORWARD_STEPWISE_FEATURES, accuracy_benchmark=accuracy)
+    evaluate_classifier(DecisionTreeClassifier(), SIGNIFICANT_FORWARD_STEPWISE_COLUMNS, accuracy_benchmark=accuracy)
 
     print('\nEvaluating performance of 7 most significant forward stepwise feature-based DecisionTreeClassifier...')
-    evaluate_classifier(DecisionTreeClassifier(), SIGNIFICANT_FORWARD_STEPWISE_FEATURES[:7], accuracy_benchmark=accuracy)
+    evaluate_classifier(DecisionTreeClassifier(), SIGNIFICANT_FORWARD_STEPWISE_COLUMNS[:7], accuracy_benchmark=accuracy)
 
     print('\nEvaluating performance of 3 most significant forward stepwise feature-based DecisionTreeClassifier...')
-    evaluate_classifier(DecisionTreeClassifier(), SIGNIFICANT_FORWARD_STEPWISE_FEATURES[:3], accuracy_benchmark=accuracy)
+    evaluate_classifier(DecisionTreeClassifier(), SIGNIFICANT_FORWARD_STEPWISE_COLUMNS[:3], accuracy_benchmark=accuracy)
 
 
 def evaluate_model(model, test_features, test_labels, accuracy_benchmark=None):
