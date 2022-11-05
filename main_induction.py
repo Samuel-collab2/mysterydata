@@ -1,3 +1,4 @@
+from os.path import join
 from dataclasses import dataclass
 from itertools import product
 import pandas as pd
@@ -9,7 +10,7 @@ from sklearn.ensemble import RandomForestClassifier
 from core.preprocessing import separate_features_label, split_training_test, \
     convert_label_boolean, get_categorical_columns, expand_dataset_deterministic
 from core.model_induction import NullDecisionTreeInduction
-from core.constants import DATASET_LABEL_NAME, DATASET_TRAIN_RATIO, \
+from core.constants import OUTPUT_DIR, DATASET_LABEL_NAME, DATASET_TRAIN_RATIO, \
     SIGNIFICANT_BINARY_LABEL_COLUMNS, SIGNIFICANT_FORWARD_STEPWISE_COLUMNS
 
 
@@ -28,8 +29,15 @@ class ModelPerformance:
 models = [
     (DecisionTreeClassifier, {}),
     (DecisionTreeClassifier, {'max_depth': 20}),
+    (RandomForestClassifier, {'n_estimators': 10}),
+    (RandomForestClassifier, {'n_estimators': 10, 'max_depth': 20}),
+    (RandomForestClassifier, {'n_estimators': 10, 'max_depth': 40}),
     (RandomForestClassifier, {'n_estimators': 30}),
     (RandomForestClassifier, {'n_estimators': 30, 'max_depth': 20}),
+    (RandomForestClassifier, {'n_estimators': 30, 'max_depth': 40}),
+    (RandomForestClassifier, {'n_estimators': 50}),
+    (RandomForestClassifier, {'n_estimators': 50, 'max_depth': 20}),
+    (RandomForestClassifier, {'n_estimators': 50, 'max_depth': 40}),
 ]
 
 # model modifiers: all combinations are considered
@@ -130,6 +138,16 @@ def perform_induction_tests(dataset):
     ])
 
 
+    def score_model(model):
+        _, (model_f1, model_overfit) = model
+        return model_f1 - model_overfit
+
+    def sorted_models(model_scores):
+        return sorted(model_scores.items(),
+            key=score_model,
+            reverse=True)
+
+
     model_scores = {}
     for model_type, model_args in models:
         for modifier_values in product(*modifiers.values()):
@@ -154,19 +172,31 @@ def perform_induction_tests(dataset):
                 model_performance.train_accuracy - model_performance.test_accuracy,
             )
 
-
-    def score_model(model):
-        _, (model_f1, model_overfit) = model
-        return model_f1 - model_overfit
+            best_model_scores = sorted_models(model_scores)
+            _write_model_rankings(_format_model_rankings(best_model_scores))
 
 
-    best_model_scores = sorted(model_scores.items(),
-        key=score_model,
-        reverse=True)[:NUM_BEST_MODELS]
-
+    best_model_scores = sorted_models(model_scores)
     print(f'\n-- Top {NUM_BEST_MODELS} model F1 scores (offset by overfit) --')
-    print('\n'.join([f'{i + 1}. ({model_f1 * 100:.2f}-{model_overfit * 100:.1f})% :: {model_id}'
-        for i, (model_id, (model_f1, model_overfit)) in enumerate(best_model_scores)]))
+    print(_format_model_rankings(best_model_scores[:NUM_BEST_MODELS]))
+
+
+def _format_model_score(model_score):
+    # if overfit is negative, the model is more accurate on test than train
+    # TODO: should this be encouraged or penalized in our model selection?
+    model_f1, model_overfit = model_score
+    return (f'({model_f1 * 100:.2f}'
+        f'{"+" if model_overfit < 0 else "-"}'
+        f'{abs(model_overfit) * 100:.1f})%')
+
+def _format_model_rankings(model_rankings):
+    return '\n'.join([f'{i + 1}. {_format_model_score(model_score)} :: {model_id}'
+        for i, (model_id, model_score) in enumerate(model_rankings)])
+
+def _write_model_rankings(rankings_buffer):
+    rankings_path = join(OUTPUT_DIR, 'model_rankings.md')
+    with open(rankings_path, mode='w') as rankings_file:
+        rankings_file.write(rankings_buffer)
 
 
 def _get_delta_tag(benchmark, value):
