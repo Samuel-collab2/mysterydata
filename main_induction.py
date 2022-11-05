@@ -113,6 +113,7 @@ def perform_induction(dataset):
     modifiers['feature_subset'].append(list(features_expanded.columns))
 
 
+    model_scores = {}
     for model_type, model_args in models:
         for modifier_values in product(*modifiers.values()):
             model = model_type(**model_args)
@@ -121,7 +122,16 @@ def perform_induction(dataset):
 
             model_id = f'{model_type.__name__}({formatted_args})'
             print(f'\nEvaluate {model_id}')
-            evaluate_classifier(model, **eval_args)
+            model_performance = evaluate_classifier(model, **eval_args)
+            model_scores[model_id] = model_performance.test_f1
+
+    best_model_scores = sorted(model_scores.items(),
+        key=lambda item: item[1],
+        reverse=True)[:5]
+
+    print('\n-- Top 5 model scores --')
+    print('\n'.join([f'{i + 1}. {model_id}: {model_score * 100:.2f}%'
+        for i, (model_id, model_score) in enumerate(best_model_scores)]))
 
 
 def _get_delta_tag(benchmark, value):
