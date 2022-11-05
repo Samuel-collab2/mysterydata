@@ -14,7 +14,6 @@ from core.constants import DATASET_LABEL_NAME, DATASET_TRAIN_RATIO, \
 
 
 NUM_BEST_MODELS = 10
-REJECTION_SKEW = 4  # HACK: 4x rejected than accepted
 
 
 @dataclass
@@ -41,17 +40,12 @@ modifiers = {
         ('all_prop', SIGNIFICANT_FORWARD_STEPWISE_FEATURES),
         ('top3_prop', SIGNIFICANT_FORWARD_STEPWISE_FEATURES[:3]),
     ],
-    'balance': (True, False),
+    'rejection_skew': [0, *(2 ** n for n in range(0, 4 + 1))],
 }
 
 
-def _format_kwarg_value(value):
-    return (f'list[{len(value)}]'
-        if isinstance(value, list)
-        else value)
-
 def _format_kwargs(**kwargs):
-    return ', '.join([f'{key}={_format_kwarg_value(value)}'
+    return ', '.join([f'{key}={value}'
         for key, value in kwargs.items()])
 
 def _balance_binary_dataset(train_features, train_labels, skew_true=1, skew_false=1):
@@ -100,12 +94,12 @@ def perform_induction(dataset):
 
     benchmark = None
 
-    def evaluate_classifier(model, feature_subset=features_expanded.columns, balance=False):
-        if balance:
+    def evaluate_classifier(model, feature_subset=features_expanded.columns, rejection_skew=0):
+        if rejection_skew:
             x_train, y_train = _balance_binary_dataset(
                 train_features.loc[:, feature_subset],
                 train_labels,
-                skew_false=REJECTION_SKEW
+                skew_false=rejection_skew,
             )
         else:
             x_train, y_train = (
