@@ -12,6 +12,7 @@ from sklearn.model_selection import KFold
 from core.preprocessing import separate_features_label, split_training_test, \
     convert_label_boolean, get_categorical_columns, expand_dataset_deterministic
 from core.model_induction import NullDecisionTreeInduction
+from core.model_induction_tf import NeuralNetworkClassifier
 from core.constants import OUTPUT_DIR, DATASET_LABEL_NAME, DATASET_TRAIN_RATIO, \
     SIGNIFICANT_BINARY_LABEL_COLUMNS, SIGNIFICANT_FORWARD_STEPWISE_COLUMNS
 
@@ -30,17 +31,14 @@ class ModelPerformance:
 
 
 models = [
+    (NeuralNetworkClassifier, {'epochs': 10, 'batch_size': 100}),
     (DecisionTreeClassifier, {}),
-    (DecisionTreeClassifier, {'max_depth': 20}),
-    (RandomForestClassifier, {'n_estimators': 10}),
-    (RandomForestClassifier, {'n_estimators': 10, 'max_depth': 20}),
-    (RandomForestClassifier, {'n_estimators': 10, 'max_depth': 40}),
     (RandomForestClassifier, {'n_estimators': 30}),
-    (RandomForestClassifier, {'n_estimators': 30, 'max_depth': 20}),
     (RandomForestClassifier, {'n_estimators': 30, 'max_depth': 40}),
     (RandomForestClassifier, {'n_estimators': 50}),
-    (RandomForestClassifier, {'n_estimators': 50, 'max_depth': 20}),
     (RandomForestClassifier, {'n_estimators': 50, 'max_depth': 40}),
+    (RandomForestClassifier, {'n_estimators': 70}),
+    (RandomForestClassifier, {'n_estimators': 70, 'max_depth': 40}),
 ]
 
 # model modifiers: all combinations are considered
@@ -135,7 +133,7 @@ def perform_induction_tests(dataset):
 
     # HACK: add full column sets at runtime
     modifiers['feature_subset'].extend([
-        ('all_features', list(features_expanded.columns)),
+        ('all', list(features_expanded.columns)),
     ])
 
 
@@ -215,15 +213,16 @@ def _write_model_rankings(rankings_buffer):
 
 
 def _get_delta_tag(benchmark, value):
+    if (benchmark is None
+    or value == benchmark
+    or benchmark == 0):
+        return ''
     delta = value - (benchmark or 0)
-    delta_tag = (f' ({"+" if delta >= 0 else ""}{delta * 100:.2f}%)'
-        if benchmark is not None
-        else '')
-    return delta_tag
+    return f' ({"+" if delta >= 0 else ""}{delta * 100:.2f}%)'
 
 
 def evaluate_model(model, train_features, train_labels, test_features, test_labels, benchmark=None):
-    pred_labels = model.predict(test_features)
+    pred_labels = list(model.predict(test_features))
     test_labels = list(test_labels)
 
     num_rows = len(test_features)
