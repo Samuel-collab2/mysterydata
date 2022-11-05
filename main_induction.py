@@ -77,7 +77,7 @@ def _balance_binary_dataset(train_features, train_labels, skew_true=1, skew_fals
     return train_features, train_labels
 
 
-def perform_induction(dataset):
+def perform_induction_tests(dataset):
     print('Running induction test suite...')
 
     features, labels = separate_features_label(dataset, DATASET_LABEL_NAME)
@@ -207,4 +207,4 @@ def evaluate_model(model, train_features, train_labels, test_features, test_labe
 if __name__ == '__main__':
     from core.loader import load_train_dataset, load_determining_dataset
     print('Loading dataset...')
-    perform_induction(dataset=load_train_dataset())
+    perform_induction_tests(dataset=load_train_dataset())
