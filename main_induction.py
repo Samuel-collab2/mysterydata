@@ -71,8 +71,8 @@ def _balance_binary_dataset(train_features, train_labels, skew_true=1, skew_fals
     train_samples = pd.concat((true_samples, false_samples))
 
     print(f'Balance training set'
-        f' with {min_samples} accepted samples'
-        f' and {min_samples} rejected samples')
+        f' with {min_samples * skew_true} accepted samples'
+        f' and {min_samples * skew_false} rejected samples')
     train_features, train_labels = separate_features_label(train_samples, dataset_label_name)
     return train_features, train_labels
 
@@ -149,15 +149,24 @@ def perform_induction_tests(dataset):
                 key: (value[1] if key == 'feature_subset' else value)
                     for key, value in eval_args.items()
             })
-            model_scores[model_id] = model_performance.test_f1
+            model_scores[model_id] = (
+                model_performance.test_f1,
+                model_performance.train_accuracy - model_performance.test_accuracy,
+            )
+
+
+    def score_model(model):
+        _, (model_f1, model_overfit) = model
+        return model_f1 - model_overfit
+
 
     best_model_scores = sorted(model_scores.items(),
-        key=lambda item: item[1],
+        key=score_model,
         reverse=True)[:NUM_BEST_MODELS]
 
-    print(f'\n-- Top {NUM_BEST_MODELS} model F1 scores --')
-    print('\n'.join([f'{i + 1}. {model_score * 100:.2f}% -- {model_id}'
-        for i, (model_id, model_score) in enumerate(best_model_scores)]))
+    print(f'\n-- Top {NUM_BEST_MODELS} model F1 scores (offset by overfit) --')
+    print('\n'.join([f'{i + 1}. ({model_f1 * 100:.2f}-{model_overfit * 100:.1f})% :: {model_id}'
+        for i, (model_id, (model_f1, model_overfit)) in enumerate(best_model_scores)]))
 
 
 def _get_delta_tag(benchmark, value):
