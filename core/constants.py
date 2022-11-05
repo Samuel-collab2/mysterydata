@@ -18,27 +18,33 @@ ANALYSIS_RIDGE_LAMBDAS = [pow(10, exponent) for exponent in range(-5, 10)]
 ANALYSIS_SIGNIFICANT_FEATURE_COUNT = 20
 ANALYSIS_CORRELATION_THRESHOLD = 0.45
 
-SUBMISSION_SAMPLE_COUNT = 30000
+SIGNIFICANT_FEATURE_SET_COUNTS = [1, 3, 5, 10, 15, 20]
 
-MENU_EXIT = ('Exit', lambda: True)
-MENU_RETURN = ('<<< Back', lambda: True)
-
-SIGNIFICANT_REGRESSION_FEATURE_COUNT = 3
-SIGNIFICANT_REGRESSION_FEATURES = [
-    "feature1",
-    "feature3_8",
-    "feature15_6",
-    "feature10",
-    "feature14_3",
-    "feature14_1",
-    "feature3_1",
-    "feature15_5",
-    "feature11_4",
-    "feature16_5",
-    "feature15_4",
+SIGNIFICANT_RIDGE_COLUMNS = [
+    'feature1',
+    'feature3_8',
+    'feature15_6',
+    'feature10',
+    'feature14_3',
+    'feature14_1',
+    'feature3_1',
+    'feature15_5',
+    'feature11_4',
+    'feature16_5',
+    'feature15_4',
+    'feature11_3',
+    'feature11_5',
+    'feature8',
+    'feature16_4',
+    'feature17',
+    'feature12',
+    'feature11_7',
+    'feature15_2',
+    'feature3_2',
+    'feature3_5',
 ]
 
-SIGNIFICANT_BINARY_LABEL_FEATURES = [
+SIGNIFICANT_BINARY_LABEL_COLUMNS = [
     'feature1',
     'feature3_8',
     'feature10',
@@ -50,9 +56,19 @@ SIGNIFICANT_BINARY_LABEL_FEATURES = [
     'feature3_4',
     'feature16_5',
     'feature3_7',
+    'feature13_1',
+    'feature15_3',
+    'feature16_1',
+    'feature11_7',
+    'feature18_1',
+    'feature9_0',
+    'feature9_1',
+    'feature15_6',
+    'feature11_3',
+    'feature11_8',
 ]
 
-SIGNIFICANT_FORWARD_STEPWISE_FEATURES = [
+SIGNIFICANT_FORWARD_STEPWISE_COLUMNS = [
     'feature1',
     'feature15_4',
     'feature3_8',
@@ -74,3 +90,6 @@ SIGNIFICANT_FORWARD_STEPWISE_FEATURES = [
     'feature9_1',
     'feature13_0',
 ]
+
+MENU_EXIT = ('Exit', lambda: True)
+MENU_RETURN = ('<<< Back', lambda: True)
