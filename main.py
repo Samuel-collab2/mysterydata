@@ -8,7 +8,7 @@ from core.predict import predict_submission1_ridge, predict_submission1_propagat
 from core.preprocessing import split_training_test, split_claims_accept_reject, \
     separate_features_label, convert_label_binary, get_categorical_columns, expand_dataset_deterministic
 from library.option_input import OptionInput
-from main_induction import perform_decision_tree_induction
+from main_induction import perform_induction_tests
 
 
 def run_menu(title, options):
@@ -69,7 +69,7 @@ def main():
             ('Perform polynomial complexity analysis', lambda: perform_polynomial_complexity_analysis(train_data, test_data)),
             ('Perform lasso lambda analysis', lambda: perform_lasso_lambda_analysis(train_data, test_data)),
             ('Perform ridge lambda analysis', lambda: perform_ridge_lambda_analysis(train_data, test_data)),
-            ('Perform decision tree induction (Raw data)', lambda: perform_decision_tree_induction(dataset_raw)),
+            ('Perform induction tests (Raw data)', lambda: perform_induction_tests(dataset_raw)),
             MENU_RETURN
         ])
 
