@@ -4,7 +4,6 @@ import pandas as pd
 
 from sklearn.metrics import precision_score, recall_score, f1_score
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.neighbors import KNeighborsClassifier
 from sklearn.ensemble import RandomForestClassifier
 
 from core.preprocessing import separate_features_label, split_training_test, expand_dataset, \
@@ -12,6 +11,10 @@ from core.preprocessing import separate_features_label, split_training_test, exp
 from core.model_induction import NullDecisionTreeInduction
 from core.constants import DATASET_LABEL_NAME, DATASET_TRAIN_RATIO, \
     SIGNIFICANT_BINARY_LABEL_FEATURES, SIGNIFICANT_FORWARD_STEPWISE_FEATURES
+
+
+NUM_BEST_MODELS = 10
+REJECTION_SKEW = 4  # HACK: 4x rejected than accepted
 
 
 @dataclass
@@ -28,15 +31,16 @@ models = [
     (DecisionTreeClassifier, {'max_depth': 20}),
     (RandomForestClassifier, {'n_estimators': 30}),
     (RandomForestClassifier, {'n_estimators': 30, 'max_depth': 20}),
-    # (KNeighborsClassifier, {'n_neighbors': 3}),
 ]
 
 # model modifiers: all combinations are considered
 modifiers = {
-    'feature_subset': [SIGNIFICANT_BINARY_LABEL_FEATURES,
-        SIGNIFICANT_BINARY_LABEL_FEATURES[:3],
-        SIGNIFICANT_FORWARD_STEPWISE_FEATURES,
-        SIGNIFICANT_FORWARD_STEPWISE_FEATURES[:3]],
+    'feature_subset': [
+        ('all_ridge', SIGNIFICANT_BINARY_LABEL_FEATURES),
+        ('top3_ridge', SIGNIFICANT_BINARY_LABEL_FEATURES[:3]),
+        ('all_prop', SIGNIFICANT_FORWARD_STEPWISE_FEATURES),
+        ('top3_prop', SIGNIFICANT_FORWARD_STEPWISE_FEATURES[:3]),
+    ],
     'balance': (True, False),
 }
 
@@ -50,7 +54,16 @@ def _format_kwargs(**kwargs):
     return ', '.join([f'{key}={_format_kwarg_value(value)}'
         for key, value in kwargs.items()])
 
-def _balance_binary_dataset(train_features, train_labels):
+def _balance_binary_dataset(train_features, train_labels, skew_true=1, skew_false=1):
+    """
+    Balances a binary dataset (i.e. boolean labels).
+    Skew paramaters are used to fine-tune bias.
+    :param train_features: Training features
+    :param train_labels: Training labels
+    :param skew_true: Factor of true sample count in resulting dataset
+    :param skew_false: Factor of false sample count in resulting dataset
+    """
+
     dataset_label_name = train_labels.name
 
     train_samples = pd.concat((train_features, train_labels), axis='columns')
@@ -59,8 +72,8 @@ def _balance_binary_dataset(train_features, train_labels):
     false_samples = train_samples[train_samples[dataset_label_name] == False]
     min_samples = min(len(true_samples), len(false_samples))
 
-    true_samples = true_samples[:min_samples]
-    false_samples = false_samples[:min_samples]
+    true_samples = true_samples[:min_samples * skew_true]
+    false_samples = false_samples[:min_samples * skew_false]
     train_samples = pd.concat((true_samples, false_samples))
 
     print(f'Balance training set'
@@ -71,7 +84,7 @@ def _balance_binary_dataset(train_features, train_labels):
 
 
 def perform_induction(dataset):
-    print('Executing induction test suite...')
+    print('Running induction test suite...')
 
     features, labels = separate_features_label(dataset, DATASET_LABEL_NAME)
     features_expanded = expand_dataset(features)
@@ -91,7 +104,8 @@ def perform_induction(dataset):
         if balance:
             x_train, y_train = _balance_binary_dataset(
                 train_features.loc[:, feature_subset],
-                train_labels
+                train_labels,
+                skew_false=REJECTION_SKEW
             )
         else:
             x_train, y_train = (
@@ -115,7 +129,9 @@ def perform_induction(dataset):
 
 
     # HACK: add full column set at runtime
-    modifiers['feature_subset'].append(list(features_expanded.columns))
+    modifiers['feature_subset'].append(
+        ('all_features', list(features_expanded.columns))
+    )
 
 
     model_scores = {}
@@ -123,19 +139,28 @@ def perform_induction(dataset):
         for modifier_values in product(*modifiers.values()):
             model = model_type(**model_args)
             eval_args = dict(zip(modifiers.keys(), modifier_values))
-            formatted_args = _format_kwargs(**model_args, **eval_args)
+            formatted_args = _format_kwargs(**model_args, **{
+                # HACK: use feature subset label for print-formatting
+                key: (value[0] if key == 'feature_subset' else value)
+                    for key, value in eval_args.items()
+            })
 
             model_id = f'{model_type.__name__}({formatted_args})'
             print(f'\nEvaluate {model_id}')
-            model_performance = evaluate_classifier(model, **eval_args)
+
+            model_performance = evaluate_classifier(model, **{
+                # HACK: use feature subset sequence for classification
+                key: (value[1] if key == 'feature_subset' else value)
+                    for key, value in eval_args.items()
+            })
             model_scores[model_id] = model_performance.test_f1
 
     best_model_scores = sorted(model_scores.items(),
         key=lambda item: item[1],
-        reverse=True)[:5]
+        reverse=True)[:NUM_BEST_MODELS]
 
-    print('\n-- Top 5 model scores --')
-    print('\n'.join([f'{i + 1}. {model_id}: {model_score * 100:.2f}%'
+    print(f'\n-- Top {NUM_BEST_MODELS} model F1 scores --')
+    print('\n'.join([f'{i + 1}. {model_score * 100:.2f}% -- {model_id}'
         for i, (model_id, model_score) in enumerate(best_model_scores)]))
 
 
