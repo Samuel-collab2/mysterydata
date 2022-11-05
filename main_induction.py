@@ -28,7 +28,7 @@ models = [
     (DecisionTreeClassifier, {'max_depth': 20}),
     (RandomForestClassifier, {'n_estimators': 30}),
     (RandomForestClassifier, {'n_estimators': 30, 'max_depth': 20}),
-    (KNeighborsClassifier, {'n_neighbors': 3}),
+    # (KNeighborsClassifier, {'n_neighbors': 3}),
 ]
 
 # model modifiers: all combinations are considered
@@ -41,8 +41,13 @@ modifiers = {
 }
 
 
+def _format_kwarg_value(value):
+    return (f'list[{len(value)}]'
+        if isinstance(value, list)
+        else value)
+
 def _format_kwargs(**kwargs):
-    return ', '.join([f'{key}={value}'
+    return ', '.join([f'{key}={_format_kwarg_value(value)}'
         for key, value in kwargs.items()])
 
 def _balance_binary_dataset(train_features, train_labels):
