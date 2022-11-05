@@ -6,11 +6,11 @@ from sklearn.metrics import precision_score, recall_score, f1_score
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
 
-from core.preprocessing import separate_features_label, split_training_test, expand_dataset, \
-    convert_label_boolean
+from core.preprocessing import separate_features_label, split_training_test, \
+    convert_label_boolean, get_categorical_columns, expand_dataset_deterministic
 from core.model_induction import NullDecisionTreeInduction
 from core.constants import DATASET_LABEL_NAME, DATASET_TRAIN_RATIO, \
-    SIGNIFICANT_BINARY_LABEL_FEATURES, SIGNIFICANT_FORWARD_STEPWISE_FEATURES
+    SIGNIFICANT_BINARY_LABEL_COLUMNS, SIGNIFICANT_FORWARD_STEPWISE_COLUMNS
 
 
 NUM_BEST_MODELS = 10
@@ -35,10 +35,10 @@ models = [
 # model modifiers: all combinations are considered
 modifiers = {
     'feature_subset': [
-        ('all_ridge', SIGNIFICANT_BINARY_LABEL_FEATURES),
-        ('top3_ridge', SIGNIFICANT_BINARY_LABEL_FEATURES[:3]),
-        ('all_prop', SIGNIFICANT_FORWARD_STEPWISE_FEATURES),
-        ('top3_prop', SIGNIFICANT_FORWARD_STEPWISE_FEATURES[:3]),
+        ('all_ridge', SIGNIFICANT_BINARY_LABEL_COLUMNS),
+        ('top3_ridge', SIGNIFICANT_BINARY_LABEL_COLUMNS[:3]),
+        ('all_prop', SIGNIFICANT_FORWARD_STEPWISE_COLUMNS),
+        ('top3_prop', SIGNIFICANT_FORWARD_STEPWISE_COLUMNS[:3]),
     ],
     'rejection_skew': [0, *(2 ** n for n in range(0, 4 + 1))],
 }
@@ -81,7 +81,9 @@ def perform_induction(dataset):
     print('Running induction test suite...')
 
     features, labels = separate_features_label(dataset, DATASET_LABEL_NAME)
-    features_expanded = expand_dataset(features)
+    determining_features, _ = separate_features_label(load_determining_dataset(), DATASET_LABEL_NAME)
+    categorical_columns = get_categorical_columns(dataset)
+    features_expanded = expand_dataset_deterministic(features, determining_features, categorical_columns)
     labels_boolean = convert_label_boolean(labels)
 
     (train_features, train_labels), (test_features, test_labels) = split_training_test(
@@ -122,10 +124,10 @@ def perform_induction(dataset):
     benchmark = evaluate_classifier(NullDecisionTreeInduction())
 
 
-    # HACK: add full column set at runtime
-    modifiers['feature_subset'].append(
-        ('all_features', list(features_expanded.columns))
-    )
+    # HACK: add full column sets at runtime
+    modifiers['feature_subset'].extend([
+        ('all_features', list(features_expanded.columns)),
+    ])
 
 
     model_scores = {}
@@ -203,6 +205,6 @@ def evaluate_model(model, train_features, train_labels, test_features, test_labe
 
 
 if __name__ == '__main__':
-    from core.loader import load_train_dataset
+    from core.loader import load_train_dataset, load_determining_dataset
     print('Loading dataset...')
     perform_induction(dataset=load_train_dataset())
