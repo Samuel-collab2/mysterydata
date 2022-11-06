@@ -110,3 +110,28 @@ def expand_dataset(raw_dataset, expanded_columns):
             subsets.append(feature)
 
     return pd.concat(subsets, axis=1)
+
+def balance_binary_dataset(train_features, train_labels, skew_true=1, skew_false=1):
+    """
+    Balances a binary dataset (i.e. boolean labels).
+    Skew paramaters are used to fine-tune bias.
+    :param train_features: Training features
+    :param train_labels: Training labels
+    :param skew_true: Factor of true sample count in resulting dataset
+    :param skew_false: Factor of false sample count in resulting dataset
+    """
+
+    dataset_label_name = train_labels.name
+
+    train_samples = pd.concat((train_features, train_labels), axis='columns')
+
+    true_samples = train_samples[train_samples[dataset_label_name] == True]
+    false_samples = train_samples[train_samples[dataset_label_name] == False]
+    min_samples = min(len(true_samples), len(false_samples))
+
+    true_samples = true_samples[:min_samples * skew_true]
+    false_samples = false_samples[:min_samples * skew_false]
+    train_samples = pd.concat((true_samples, false_samples))
+
+    train_features, train_labels = separate_features_label(train_samples, dataset_label_name)
+    return train_features, train_labels

@@ -2,12 +2,13 @@ from math import log2
 import json
 import pandas as pd
 from sklearn.metrics import accuracy_score
-from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier
 
 from library.graph import Graph
+from core.preprocessing import balance_binary_dataset
 
 
-class NullDecisionTreeInduction:
+class NullBinaryClassifier:
 
     def fit(self, train_features: pd.DataFrame, train_labels: pd.Series):
         pass
@@ -20,7 +21,7 @@ class NullDecisionTreeInduction:
         return accuracy_score(self.predict(features), labels)
 
 
-class BinaryDecisionTreeInduction(NullDecisionTreeInduction):
+class CustomBinaryClassifier(NullBinaryClassifier):
 
     @staticmethod
     def _find_root_entropy(label):
@@ -170,11 +171,11 @@ class BinaryDecisionTreeInduction(NullDecisionTreeInduction):
 
 
 def train_decision_tree(train_features, train_label):
-    model = BinaryDecisionTreeInduction()
+    model = CustomBinaryClassifier()
     model.fit(train_features, train_label)
     return model
 
 def train_classifier_tree(train_features, train_label):
-    model = DecisionTreeClassifier()
-    model.fit(train_features, train_label)
+    model = RandomForestClassifier(n_estimators=30, max_depth=40)
+    model.fit(*balance_binary_dataset(train_features, train_label, skew_false=8))
     return model
