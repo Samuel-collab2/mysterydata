@@ -7,12 +7,14 @@ import numpy as np
 from sklearn.metrics import precision_score, recall_score, f1_score
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.naive_bayes import GaussianNB
 from sklearn.model_selection import KFold
 
 from core.preprocessing import separate_features_label, split_training_test, \
-    convert_label_boolean, get_categorical_columns, expand_dataset_deterministic
+    convert_label_boolean, get_categorical_columns, expand_dataset_deterministic, \
+    balance_binary_dataset
 from core.model_induction import NullDecisionTreeInduction
-from core.model_induction_tf import NeuralNetworkClassifier
+from core.model_induction_nn import NeuralNetworkClassifier
 from core.constants import OUTPUT_DIR, DATASET_LABEL_NAME, DATASET_TRAIN_RATIO, \
     SIGNIFICANT_BINARY_LABEL_COLUMNS, SIGNIFICANT_FORWARD_STEPWISE_COLUMNS
 
@@ -31,8 +33,9 @@ class ModelPerformance:
 
 
 models = [
-    (NeuralNetworkClassifier, {'epochs': 10, 'batch_size': 100}),
+    (NeuralNetworkClassifier, {'epochs': 50, 'batch_size': 100}),
     (DecisionTreeClassifier, {}),
+    (GaussianNB, {}),
     (RandomForestClassifier, {'n_estimators': 30}),
     (RandomForestClassifier, {'n_estimators': 30, 'max_depth': 40}),
     (RandomForestClassifier, {'n_estimators': 50}),
@@ -47,41 +50,13 @@ modifiers = {
         ('all_ridge', SIGNIFICANT_BINARY_LABEL_COLUMNS),
         ('all_prop', SIGNIFICANT_FORWARD_STEPWISE_COLUMNS),
     ],
-    'rejection_skew': range(0, 16 + 1, 4),
+    'rejection_skew': (1, 2, 4, 8),
 }
 
 
 def _format_kwargs(**kwargs):
     return ', '.join([f'{key}={value}'
         for key, value in kwargs.items()])
-
-def _balance_binary_dataset(train_features, train_labels, skew_true=1, skew_false=1):
-    """
-    Balances a binary dataset (i.e. boolean labels).
-    Skew paramaters are used to fine-tune bias.
-    :param train_features: Training features
-    :param train_labels: Training labels
-    :param skew_true: Factor of true sample count in resulting dataset
-    :param skew_false: Factor of false sample count in resulting dataset
-    """
-
-    dataset_label_name = train_labels.name
-
-    train_samples = pd.concat((train_features, train_labels), axis='columns')
-
-    true_samples = train_samples[train_samples[dataset_label_name] == True]
-    false_samples = train_samples[train_samples[dataset_label_name] == False]
-    min_samples = min(len(true_samples), len(false_samples))
-
-    true_samples = true_samples[:min_samples * skew_true]
-    false_samples = false_samples[:min_samples * skew_false]
-    train_samples = pd.concat((true_samples, false_samples))
-
-    print(f'Balance training set'
-        f' with {min_samples * skew_true} accepted samples'
-        f' and {min_samples * skew_false} rejected samples')
-    train_features, train_labels = separate_features_label(train_samples, dataset_label_name)
-    return train_features, train_labels
 
 
 def perform_induction_tests(dataset):
@@ -106,7 +81,7 @@ def perform_induction_tests(dataset):
                             rejection_skew=0,
                             benchmark=None):
         if rejection_skew:
-            x_train, y_train = _balance_binary_dataset(
+            x_train, y_train = balance_binary_dataset(
                 x_train.loc[:, feature_subset],
                 y_train,
                 skew_false=rejection_skew,
@@ -154,7 +129,7 @@ def perform_induction_tests(dataset):
     for (model_type, model_args), modifier_values in product(models, modifier_combinations):
         model_results = []
 
-        for train_index, test_index in kfold.split(train_features):
+        for k, (train_index, test_index) in enumerate(kfold.split(train_features)):
             x_train, x_test = train_features.iloc[train_index], train_features.iloc[test_index]
             y_train, y_test = train_labels.iloc[train_index], train_labels.iloc[test_index]
 
@@ -167,23 +142,22 @@ def perform_induction_tests(dataset):
                     for key, value in model_modifiers.items()
             })
             model_id = f'{model_type.__name__}({formatted_args})'
-            print(f'\nEvaluate {model_id}')
+            print(f'\n{k+1}. Evaluate {model_id}')
 
             model_performance = evaluate_classifier(model,
                 x_train, y_train,
                 x_test, y_test,
                 benchmark=null_benchmark,
-                **{
-                    # HACK: use feature subset sequence for classification
-                    key: (value[1] if key == 'feature_subset' else value)
-                        for key, value in model_modifiers.items()
-                })
+                # HACK: use feature subset sequence for classification
+                **{key: (value[1] if key == 'feature_subset' else value)
+                    for key, value in model_modifiers.items()}
+            )
             model_results.append(model_performance)
 
         model_scores[model_id] = (
             np.mean([result.test_f1 for result in model_results]),
-            np.mean([result.train_accuracy - result.test_accuracy for result in model_results]),
-        )
+            np.mean([abs(result.train_accuracy - result.test_accuracy) for result in model_results]),
+        )  # absolute accuracy delta penalizes both overfit and underfit
 
         best_model_scores = sorted_models(model_scores)
         _write_model_rankings(_format_model_rankings(best_model_scores))
@@ -195,8 +169,6 @@ def perform_induction_tests(dataset):
 
 
 def _format_model_score(model_score):
-    # if overfit is negative, the model is more accurate on test than train
-    # TODO: should this be encouraged or penalized in our model selection?
     model_f1, model_overfit = model_score
     return (f'({model_f1 * 100:.2f}'
         f'{"+" if model_overfit < 0 else "-"}'

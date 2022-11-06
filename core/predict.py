@@ -4,7 +4,8 @@ import pandas as pd
 from sklearn.metrics import mean_absolute_error
 
 from core.constants import DATASET_LABEL_NAME, OUTPUT_DIR, SIGNIFICANT_RIDGE_COLUMNS, \
-    SIGNIFICANT_FORWARD_STEPWISE_COLUMNS, SIGNIFICANT_FEATURE_SET_COUNTS
+    SIGNIFICANT_FORWARD_STEPWISE_COLUMNS, SIGNIFICANT_FEATURE_SET_COUNTS, \
+    SIGNIFICANT_BINARY_LABEL_COLUMNS
 from core.loader import load_test_dataset, load_determining_dataset
 from core.model_composite import train_composite
 from core.preprocessing import separate_features_label, \
@@ -55,7 +56,7 @@ def _get_submission_data(dataset):
         expanded_train_features, expanded_train_features, expanded_train_label
 
 def _output_predictions(model, induction_test_features, regression_test_features, filename):
-    predictions = model.predict(induction_test_features, regression_test_features)
+    predictions = model.predict(induction_test_features.drop('rowIndex', axis='columns'), regression_test_features)
     output = pd.DataFrame({
         'rowIndex': induction_test_features['rowIndex'].values,
         'ClaimAmount': predictions,
@@ -69,6 +70,8 @@ def _predict_feature_sets(dataset, feature_sets, file_prefix):
         regression_train_features, regression_train_label, regression_test_features, \
         evaluation_induction_features, evaluation_regression_features, evaluation_label = _get_submission_data(dataset)
 
+    induction_columns = SIGNIFICANT_BINARY_LABEL_COLUMNS
+
     for index, feature_set in enumerate(feature_sets):
         filename = f'{file_prefix}_set{index}'
 
@@ -76,7 +79,7 @@ def _predict_feature_sets(dataset, feature_sets, file_prefix):
         print(feature_set)
 
         model = train_composite(
-            induction_train_features,
+            induction_train_features.loc[:, induction_columns],
             induction_train_label,
             regression_train_features.loc[:, feature_set],
             regression_train_label,
@@ -84,7 +87,7 @@ def _predict_feature_sets(dataset, feature_sets, file_prefix):
         )
 
         training_predictions = model.predict(
-            evaluation_induction_features,
+            evaluation_induction_features.loc[:, induction_columns],
             evaluation_regression_features.loc[:, feature_set]
         )
 
@@ -95,7 +98,10 @@ def _predict_feature_sets(dataset, feature_sets, file_prefix):
 
         print(f'Training MAE: {training_mae}')
 
-        _output_predictions(model, induction_test_features, regression_test_features.loc[:, feature_set], filename)
+        _output_predictions(model,
+            induction_test_features.loc[:, ('rowIndex', *induction_columns)],
+            regression_test_features.loc[:, feature_set],
+            filename)
 
 def predict_submission1_ridge(dataset):
     feature_sets = [
