@@ -8,7 +8,7 @@ from library.graph import Graph
 from core.preprocessing import balance_binary_dataset
 
 
-class NullDecisionTreeInduction:
+class NullBinaryClassifier:
 
     def fit(self, train_features: pd.DataFrame, train_labels: pd.Series):
         pass
@@ -21,7 +21,7 @@ class NullDecisionTreeInduction:
         return accuracy_score(self.predict(features), labels)
 
 
-class BinaryDecisionTreeInduction(NullDecisionTreeInduction):
+class CustomBinaryClassifier(NullBinaryClassifier):
 
     @staticmethod
     def _find_root_entropy(label):
@@ -171,7 +171,7 @@ class BinaryDecisionTreeInduction(NullDecisionTreeInduction):
 
 
 def train_decision_tree(train_features, train_label):
-    model = BinaryDecisionTreeInduction()
+    model = CustomBinaryClassifier()
     model.fit(train_features, train_label)
     return model
 

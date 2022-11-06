@@ -13,7 +13,7 @@ from sklearn.model_selection import KFold
 from core.preprocessing import separate_features_label, split_training_test, \
     convert_label_boolean, get_categorical_columns, expand_dataset_deterministic, \
     balance_binary_dataset
-from core.model_induction import NullDecisionTreeInduction
+from core.model_induction import NullBinaryClassifier
 from core.model_induction_nn import NeuralNetworkClassifier
 from core.constants import OUTPUT_DIR, DATASET_LABEL_NAME, DATASET_TRAIN_RATIO, \
     SIGNIFICANT_BINARY_LABEL_COLUMNS, SIGNIFICANT_FORWARD_STEPWISE_COLUMNS
@@ -33,15 +33,15 @@ class ModelPerformance:
 
 
 models = [
-    (NeuralNetworkClassifier, {'epochs': 50, 'batch_size': 100}),
-    (DecisionTreeClassifier, {}),
     (GaussianNB, {}),
+    (DecisionTreeClassifier, {}),
     (RandomForestClassifier, {'n_estimators': 30}),
     (RandomForestClassifier, {'n_estimators': 30, 'max_depth': 40}),
     (RandomForestClassifier, {'n_estimators': 50}),
     (RandomForestClassifier, {'n_estimators': 50, 'max_depth': 40}),
     (RandomForestClassifier, {'n_estimators': 70}),
     (RandomForestClassifier, {'n_estimators': 70, 'max_depth': 40}),
+    (NeuralNetworkClassifier, {'epochs': 50, 'batch_size': 100}),
 ]
 
 # model modifiers: all combinations are considered
@@ -101,7 +101,7 @@ def perform_induction_tests(dataset):
 
 
     print('\nEvaluating performance of null induction model...')
-    null_benchmark = evaluate_classifier(NullDecisionTreeInduction(),
+    null_benchmark = evaluate_classifier(NullBinaryClassifier(),
         train_features, train_labels,
         test_features, test_labels)
 
@@ -162,8 +162,6 @@ def perform_induction_tests(dataset):
         best_model_scores = sorted_models(model_scores)
         _write_model_rankings(_format_model_rankings(best_model_scores))
 
-
-    best_model_scores = sorted_models(model_scores)
     print(f'\n-- Top {NUM_BEST_MODELS} model F1 scores (offset by overfit) --')
     print(_format_model_rankings(best_model_scores[:NUM_BEST_MODELS]))
 
@@ -186,8 +184,8 @@ def _write_model_rankings(rankings_buffer):
 
 def _get_delta_tag(benchmark, value):
     if (benchmark is None
-    or value == benchmark
-    or benchmark == 0):
+    or benchmark == 0
+    or value == benchmark):
         return ''
     delta = value - (benchmark or 0)
     return f' ({"+" if delta >= 0 else ""}{delta * 100:.2f}%)'

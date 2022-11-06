@@ -1,10 +1,10 @@
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense
 
-from core.model_induction import NullDecisionTreeInduction
+from core.model_induction import NullBinaryClassifier
 
 
-class NeuralNetworkClassifier(NullDecisionTreeInduction):
+class NeuralNetworkClassifier(NullBinaryClassifier):
     """
     Basic neural network binary classification model.
     """
