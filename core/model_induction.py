@@ -180,13 +180,7 @@ def train_decision_tree(train_features, train_label):
     model.fit(train_features, train_label)
     return model
 
-def train_random_forest(train_features, train_label, **kwargs):
-    estimators_key, estimators_default = 'n_estimators', 30
-    depth_key, depth_default = 'max_depth', 40
-
-    kwargs[estimators_key] = kwargs[estimators_key] if estimators_key in kwargs else estimators_default
-    kwargs[depth_key] = kwargs[depth_key] if depth_key in kwargs else depth_default
-
-    model = RandomForestClassifier(**kwargs)
+def train_random_forest(train_features, train_label, n_estimators=30, max_depth=40, **kwargs):
+    model = RandomForestClassifier(n_estimators, max_depth, **kwargs)
     model.fit(train_features, train_label)
     return model
