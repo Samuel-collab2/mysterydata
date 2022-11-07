@@ -180,7 +180,7 @@ def train_decision_tree(train_features, train_label):
     model.fit(train_features, train_label)
     return model
 
-def train_classifier_tree(train_features, train_label, **kwargs):
+def train_random_forest(train_features, train_label, **kwargs):
     estimators_key, estimators_default = 'n_estimators', 30
     depth_key, depth_default = 'max_depth', 40
 

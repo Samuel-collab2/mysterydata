@@ -9,7 +9,7 @@ from core.constants_submission import SUBMISSION1_RIDGE_FEATURE_SET_COUNTS, SUBM
     SUBMISSION2_MODEL_SETS
 from core.loader import load_test_dataset, load_determining_dataset
 from core.model_composite import train_composite
-from core.model_induction import train_classifier_tree
+from core.model_induction import train_random_forest
 from core.model_regression import train_linear_regression
 from core.modifiers import modifier_filter_columns
 from core.preprocessing import separate_features_label, \
@@ -172,7 +172,7 @@ def _get_submission1_model_sets(prefix, feature_set_columns, feature_set_counts)
     return [
         (
             f'{prefix} set{index}',
-            train_classifier_tree, [],
+            train_random_forest, [],
             train_linear_regression, [
                 modifier_filter_columns(feature_set),
             ]

@@ -1,5 +1,5 @@
 import pandas as pd
-from core.model_induction import train_classifier_tree
+from core.model_induction import train_random_forest
 from core.model_regression import train_linear_regression
 
 class CompositeModel:

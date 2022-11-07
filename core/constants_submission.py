@@ -1,6 +1,6 @@
 from core.constants import SIGNIFICANT_BINARY_LABEL_COLUMNS, SIGNIFICANT_RIDGE_COLUMNS
-from core.model_induction import train_classifier_tree, train_decision_tree
-from core.model_induction_nn import train_classifier_network
+from core.model_induction import train_random_forest, train_decision_tree
+from core.model_induction_nn import train_network_classifier
 from core.model_regression import train_linear_regression
 from core.modifiers import modifier_filter_columns, modify_model, modifier_balance_binary_data
 
@@ -23,7 +23,7 @@ SUBMISSION2_MODEL_SETS = [
     ),
     (
         'Respective top 3',
-        train_classifier_tree, [
+        train_random_forest, [
             modifier_filter_columns(SIGNIFICANT_BINARY_LABEL_COLUMNS[:3]),
         ], train_linear_regression, [
             modifier_filter_columns(SIGNIFICANT_RIDGE_COLUMNS[:3]),
@@ -31,7 +31,7 @@ SUBMISSION2_MODEL_SETS = [
     ),
     (
         'Complex model setup example',
-        modify_model(train_classifier_tree, max_depth=10), [
+        modify_model(train_random_forest, max_depth=10), [
             modifier_filter_columns(SIGNIFICANT_BINARY_LABEL_COLUMNS[:10]),
             modifier_balance_binary_data(skew_false=8)
         ], train_linear_regression, [
@@ -40,7 +40,7 @@ SUBMISSION2_MODEL_SETS = [
     ),
     (
         'Neural network classifier',
-        modify_model(train_classifier_network, epochs=50, batch_size=100), [],
+        modify_model(train_network_classifier, epochs=50, batch_size=100), [],
         train_linear_regression, []
     ),
 ]
