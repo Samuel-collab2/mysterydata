@@ -181,6 +181,6 @@ def train_decision_tree(train_features, train_label):
     return model
 
 def train_random_forest(train_features, train_label, n_estimators=30, max_depth=40, **kwargs):
-    model = RandomForestClassifier(n_estimators, max_depth, **kwargs)
+    model = RandomForestClassifier(n_estimators=n_estimators, max_depth=max_depth, **kwargs)
     model.fit(train_features, train_label)
     return model

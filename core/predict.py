@@ -11,7 +11,8 @@ from core.loader import load_test_dataset, load_determining_dataset
 from core.model_composite import train_composite
 from core.model_induction import train_random_forest
 from core.model_regression import train_linear_regression
-from core.modifiers import modifier_filter_columns
+from core.model_set import ModelSet
+from core.model_set_modifiers import modifier_filter_columns
 from core.preprocessing import separate_features_label, \
     split_claims_accept_reject, expand_dataset_deterministic, get_categorical_columns, convert_label_boolean
 
@@ -111,21 +112,15 @@ def _predict_model_sets(dataset, prefix, model_sets):
     """
     submission_data = _get_submission_data(dataset)
 
-    for index, (
-        name,
-        train_induction_model,
-        induction_modifiers,
-        train_regression_model,
-        regression_modifiers
-    ) in enumerate(model_sets):
+    for index, model_set in enumerate(model_sets):
 
-        print(f'Predicting: {name}...')
+        print(f'Predicting: {model_set.name}...')
 
         induction_data, regression_data, evaluation_label = submission_data
-        for induction_modifier in induction_modifiers:
+        for induction_modifier in model_set.induction_modifiers:
             induction_data = induction_modifier(*induction_data)
 
-        for regression_modifier in regression_modifiers:
+        for regression_modifier in model_set.regression_modifiers:
             regression_data = regression_modifier(*regression_data)
 
         induction_train_features, induction_train_label, \
@@ -139,8 +134,8 @@ def _predict_model_sets(dataset, prefix, model_sets):
             induction_train_label,
             regression_train_features,
             regression_train_label,
-            train_induction_model,
-            train_regression_model
+            model_set.train_induction_model,
+            model_set.train_regression_model
         )
 
         training_predictions = model.predict(
@@ -170,12 +165,11 @@ def _get_submission1_model_sets(prefix, feature_set_columns, feature_set_counts)
     ]
 
     return [
-        (
-            f'{prefix} set{index}',
-            train_random_forest, [],
-            train_linear_regression, [
+        ModelSet(
+            name=f'{prefix} set{index}',
+            regression_modifiers=[
                 modifier_filter_columns(feature_set),
-            ]
+            ],
         ) for index, feature_set in enumerate(feature_sets)
     ]
 
