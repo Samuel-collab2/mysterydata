@@ -3,6 +3,7 @@ import json
 import pandas as pd
 from sklearn.metrics import accuracy_score
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.tree import DecisionTreeClassifier
 
 from library.graph import Graph
 from core.preprocessing import balance_binary_dataset
@@ -54,7 +55,6 @@ class CustomBinaryClassifier(NullBinaryClassifier):
             nodes=sorted(tree_nodes, key=lambda n: -1 if n == 'feature3' else 1),
             edges=tree_edges,
         ))
-
 
     def __init__(self, tree=None):
         self._tree = tree
@@ -170,12 +170,23 @@ class CustomBinaryClassifier(NullBinaryClassifier):
             file.write(file_buffer)
 
 
-def train_decision_tree(train_features, train_label):
+def train_custom_tree(train_features, train_label):
     model = CustomBinaryClassifier()
     model.fit(train_features, train_label)
     return model
 
-def train_classifier_tree(train_features, train_label):
-    model = RandomForestClassifier(n_estimators=30, max_depth=40)
-    model.fit(*balance_binary_dataset(train_features, train_label, skew_false=8))
+def train_decision_tree(train_features, train_label):
+    model = DecisionTreeClassifier()
+    model.fit(train_features, train_label)
+    return model
+
+def train_classifier_tree(train_features, train_label, **kwargs):
+    estimators_key, estimators_default = 'n_estimators', 30
+    depth_key, depth_default = 'max_depth', 40
+
+    kwargs[estimators_key] = kwargs[estimators_key] if estimators_key in kwargs else estimators_default
+    kwargs[depth_key] = kwargs[depth_key] if depth_key in kwargs else depth_default
+
+    model = RandomForestClassifier(**kwargs)
+    model.fit(train_features, train_label)
     return model
