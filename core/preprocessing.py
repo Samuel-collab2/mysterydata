@@ -127,6 +127,7 @@ def balance_binary_dataset(train_features, train_labels, skew_true=1, skew_false
 
     true_samples = train_samples[train_samples[dataset_label_name] == True]
     false_samples = train_samples[train_samples[dataset_label_name] == False]
+
     min_samples = min(len(true_samples), len(false_samples))
 
     true_samples = true_samples[:min_samples * skew_true]

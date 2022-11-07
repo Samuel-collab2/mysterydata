@@ -39,3 +39,8 @@ class NeuralNetworkClassifier(NullBinaryClassifier):
         return [v >= 0.5
             for vs in self._model.predict(test_features, verbose=0)
                 for v in vs]
+
+def train_network_classifier(train_features, train_label, **kwargs):
+    model = NeuralNetworkClassifier(**kwargs)
+    model.fit(train_features, train_label)
+    return model
