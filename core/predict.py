@@ -19,6 +19,24 @@ def _get_submission_dataset():
     return load_test_dataset()
 
 def _get_submission_data(dataset):
+    """
+    Preprocesses the data for submission.
+
+    Loads training and test datasets.
+    Combines them for mutual dataset expansion to ensure they have the same columns.
+    Splits them back into expanded training and test datasets.
+
+    Separate features and label for each dataset.
+
+    Converts induction label to boolean values.
+
+    Filters accepted claims to use for regression training.
+
+    Returns the processed data.
+
+    :param dataset: The train dataset
+    :return: Tuple containing (induction_data, regression_data, evaluation_label)
+    """
     raw_train_dataset = dataset
     raw_test_features = _get_submission_dataset()
 
@@ -46,11 +64,6 @@ def _get_submission_data(dataset):
 
     induction_train_label = convert_label_boolean(expanded_train_label)
 
-    regression_test_features, _ = separate_features_label(
-        expanded_test_dataset,
-        DATASET_LABEL_NAME
-    )
-
     accept_data, _ = split_claims_accept_reject(expanded_train_features, expanded_train_label)
     accept_train_features, accept_train_label = accept_data
 
@@ -59,6 +72,14 @@ def _get_submission_data(dataset):
         expanded_train_label
 
 def _output_predictions(model, induction_test_features, regression_test_features, filename):
+    """
+    Outputs the predictions for a trained composite model from the test samples.
+    :param model: The trained model
+    :param induction_test_features: The induction test samples
+    :param regression_test_features: The regression test samples
+    :param filename: The name of file to write
+    :return:
+    """
     predictions = model.predict(induction_test_features, regression_test_features)
     output = pd.DataFrame({
         'rowIndex': induction_test_features.index,
@@ -69,14 +90,34 @@ def _output_predictions(model, induction_test_features, regression_test_features
     print(f'Wrote predictions to file: {filepath}')
 
 def _predict_model_sets(dataset, prefix, model_sets):
+    """
+    Output predictions and training MAE for the given model sets.
+
+    A model set is an enumeration of models, model settings and data modifiers to use for predictions.
+    A model set is given in the format:
+    (train_induction_model, induction_modifiers, train_regression_model, regression_modifiers)
+
+    The train functions are used to construct and train the models.
+    The modifier lists are used to process the data before they go into the models.
+
+    This allows for modular setup of complex models.
+
+    Each model set is trained and used to output predictions to a file.
+
+    :param dataset: The train dataset
+    :param prefix: The file name prefix
+    :param model_sets: The model sets
+    :return:
+    """
     submission_data = _get_submission_data(dataset)
 
-    for index, (name, (
+    for index, (
+        name,
         train_induction_model,
         induction_modifiers,
         train_regression_model,
         regression_modifiers
-    )) in enumerate(model_sets.items()):
+    ) in enumerate(model_sets):
 
         print(f'Predicting: {name}...')
 
@@ -128,14 +169,15 @@ def _get_submission1_model_sets(prefix, feature_set_columns, feature_set_counts)
         in feature_set_counts
     ]
 
-    return {
-        f'{prefix} set{index}': (
+    return [
+        (
+            f'{prefix} set{index}',
             train_classifier_tree, [],
             train_linear_regression, [
                 modifier_filter_columns(feature_set),
-            ]) for index, feature_set
-        in enumerate(feature_sets)
-    }
+            ]
+        ) for index, feature_set in enumerate(feature_sets)
+    ]
 
 def predict_submission1_ridge(dataset):
     model_sets = _get_submission1_model_sets(
