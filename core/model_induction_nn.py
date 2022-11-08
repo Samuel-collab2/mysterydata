@@ -9,24 +9,29 @@ class NeuralNetworkClassifier(NullBinaryClassifier):
     Basic neural network binary classification model.
     """
 
-    HIDDEN_LAYER_SIZE = 16
-
-    @classmethod
-    def _compile_model(cls, train_features):
-        model = Sequential()
-        model.add(Dense(cls.HIDDEN_LAYER_SIZE, activation='relu', input_dim=len(train_features.columns)))
-        model.add(Dense(cls.HIDDEN_LAYER_SIZE, activation='relu'))
-        model.add(Dense(1, activation='sigmoid'))
-        model.compile(loss='binary_crossentropy',
-                      optimizer='adam',
-                      metrics=['accuracy'])
-        return model
-
-    def __init__(self, epochs, batch_size, *args, **kwargs):
+    def __init__(self, epochs, batch_size,
+                 hidden_layer_size=16,
+                 optimizer='adam',
+                 activation='relu',
+                 *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._epochs = epochs
         self._batch_size = batch_size
+        self._hidden_layer_size = hidden_layer_size
+        self._optimizer = optimizer
+        self._activation = activation
         self._model = None
+
+    def _compile_model(self, train_features):
+        model = Sequential()
+        model.add(Dense(self._hidden_layer_size, activation=self._activation,
+            input_dim=len(train_features.columns)))
+        model.add(Dense(self._hidden_layer_size, activation=self._activation))
+        model.add(Dense(1, activation='sigmoid'))
+        model.compile(loss='binary_crossentropy',
+                      optimizer=self._optimizer,
+                      metrics=['accuracy'])
+        return model
 
     def fit(self, train_features, train_labels):
         self._model = self._compile_model(train_features)
