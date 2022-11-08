@@ -87,14 +87,22 @@ SUBMISSION2_MODEL_SETS = [
         ],
     ),
     ModelSet(
-        name='Neural network classifier: All propagation features, 50 epoch, 100 batch size, relu activation',
+        name='Neural network classifier: All propagation features, 50 epochs, 100 batch size, relu activation',
+        train_induction_model=modify_model(train_network_classifier, epochs=50, batch_size=100, activation='relu'),
+        induction_modifiers=[
+            modifier_filter_columns(SIGNIFICANT_FORWARD_STEPWISE_COLUMNS),
+        ],
         train_regression_model=train_linear_regression,
         regression_modifiers=[
             modifier_filter_columns(SIGNIFICANT_RIDGE_COLUMNS[:10])
         ],
     ),
     ModelSet(
-        name='Neural network classifier: All binary-label ridge features, 50 epoch, 100 batch size, tanh activation',
+        name='Neural network classifier: All binary-label ridge features, 50 epochs, 100 batch size, tanh activation',
+        train_induction_model=modify_model(train_network_classifier, epochs=50, batch_size=100, activation='tanh'),
+        induction_modifiers=[
+            modifier_filter_columns(SIGNIFICANT_BINARY_LABEL_COLUMNS),
+        ],
         train_regression_model=train_linear_regression,
         regression_modifiers=[
             modifier_filter_columns(SIGNIFICANT_RIDGE_COLUMNS[:10])
