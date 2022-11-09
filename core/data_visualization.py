@@ -3,7 +3,7 @@ from os.path import join
 import matplotlib.pyplot as plt
 from itertools import combinations
 
-from core.constants import MIN_REAL_FEATURE_UNIQUE_VALUES, OUTPUT_DIR
+from core.constants import OUTPUT_DIR
 
 def _write_plot(fig, file):
     try:
@@ -85,10 +85,10 @@ def generate_scatter_plots(features, label):
         x = features.loc[:, column]
         plot_scatter(x, label, x_axis=column, y_axis=label.name, file_name=f'scatter_{column}')
 
-def generate_histogram_plots(features, label):
+def generate_histogram_plots(features):
     for column in features.columns:
         x = features.loc[:, column]
-        plot_hist(x, bins=features[column].nunique(), x_axis=column, y_axis=label.name, file_name=f'hist_{column}')
+        plot_hist(x, bins=features[column].nunique(), x_axis=column, y_axis='count', file_name=f'hist_{column}')
 
 def generate_compound_plots(features, label):
     for column1, column2 in combinations(features.columns, r=2):
@@ -123,7 +123,3 @@ def generate_classification_plots(features, label):
             y_axis=column2,
             file_name=f'classification_{column1}-{column2}'
         )
-
-def generate_data_visualization_plots(features, label):
-    generate_basic_plots(features, label)
-    generate_compound_plots(features, label)
