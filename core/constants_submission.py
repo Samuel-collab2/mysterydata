@@ -2,7 +2,7 @@ from core.constants import SIGNIFICANT_BINARY_LABEL_COLUMNS, SIGNIFICANT_RIDGE_C
     SIGNIFICANT_FORWARD_STEPWISE_COLUMNS
 from core.model_induction import train_random_forest, train_decision_tree
 from core.model_induction_nn import train_network_classifier
-from core.model_regression import train_linear_regression, train_polynomial_regression
+from core.model_regression import train_static_regression, train_linear_regression, train_polynomial_regression
 from core.model_set import ModelSet
 from core.model_set_modifiers import modifier_filter_columns, modify_model, modifier_balance_binary_data
 
@@ -110,4 +110,17 @@ SUBMISSION2_MODEL_SETS = [
             modifier_filter_columns(SIGNIFICANT_RIDGE_COLUMNS[:10])
         ],
     ),
+]
+
+
+SUBMISSION3_MODEL_SETS = [
+    ModelSet(
+        name='Test random forest with static regression model',
+        train_induction_model=modify_model(train_random_forest, n_estimators=50, max_depth=40),
+        induction_modifiers=[
+            modifier_filter_columns(SIGNIFICANT_BINARY_LABEL_COLUMNS),
+            modifier_balance_binary_data(skew_false=8),
+        ],
+        train_regression_model=train_static_regression,
+    )
 ]

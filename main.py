@@ -4,7 +4,8 @@ from core.data_analysis import perform_linear_regression_analysis, perform_polyn
     perform_lasso_lambda_analysis, perform_ridge_lambda_analysis, perform_feature_correlation_analysis
 from core.data_visualization import generate_data_visualization_plots
 from core.loader import load_train_dataset, load_standardized_train_dataset, load_determining_dataset
-from core.predict import predict_submission1_ridge, predict_submission1_propagation, predict_submission2
+from core.predict import predict_submission1_ridge, predict_submission1_propagation, predict_submission2, \
+    predict_submission3
 from core.preprocessing import split_training_test, split_claims_accept_reject, \
     separate_features_label, convert_label_binary, get_categorical_columns, expand_dataset_deterministic
 from library.option_input import OptionInput
@@ -54,6 +55,7 @@ def main():
             ('Submission 1: Ridge', lambda: predict_submission1_ridge(dataset_raw)),
             ('Submission 1: Propagation', lambda: predict_submission1_propagation(dataset_raw)),
             ('Submission 2', lambda: predict_submission2(dataset_raw)),
+            ('Submission 3', lambda: predict_submission3(dataset_raw)),
             MENU_RETURN
         ])
 
