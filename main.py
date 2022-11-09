@@ -2,7 +2,7 @@ from core.constants import DATASET_LABEL_NAME, DATASET_TRAIN_RATIO, MENU_EXIT, M
     SIGNIFICANT_BINARY_LABEL_COLUMNS, SIGNIFICANT_FORWARD_STEPWISE_COLUMNS, SIGNIFICANT_FEATURE_SET_COUNTS
 from core.data_analysis import perform_linear_regression_analysis, perform_polynomial_complexity_analysis, \
     perform_lasso_lambda_analysis, perform_ridge_lambda_analysis, perform_feature_correlation_analysis
-from core.data_visualization import generate_data_visualization_plots
+from core.data_visualization import generate_data_visualization_plots, generate_classification_plots
 from core.loader import load_train_dataset, load_standardized_train_dataset, load_determining_dataset
 from core.predict import predict_submission1_ridge, predict_submission1_propagation, predict_submission2
 from core.preprocessing import split_training_test, split_claims_accept_reject, \
@@ -33,6 +33,8 @@ def main():
     raw_features, raw_label = separate_features_label(dataset_raw, DATASET_LABEL_NAME)
 
     categorical_columns = get_categorical_columns(raw_features)
+    categorical_features = raw_features.loc[:, categorical_columns]
+
     dataset = expand_dataset_deterministic(dataset_raw, load_determining_dataset(), categorical_columns)
 
     expanded_features, expanded_label = separate_features_label(dataset, DATASET_LABEL_NAME)
@@ -71,6 +73,13 @@ def main():
             ('Perform lasso lambda analysis', lambda: perform_lasso_lambda_analysis(train_data, test_data)),
             ('Perform ridge lambda analysis', lambda: perform_ridge_lambda_analysis(train_data, test_data)),
             ('Perform induction tests (Raw data)', lambda: perform_induction_tests(dataset_raw)),
+            MENU_RETURN
+        ])
+
+    def visualization_menu(features, label):
+        run_menu('Data visualization menu', [
+            ('Generate extensive visualization plots', lambda: generate_data_visualization_plots(features, label)),
+            ('Generate classification plots', lambda: generate_classification_plots(features, label)),
             MENU_RETURN
         ])
 
@@ -123,7 +132,7 @@ def main():
             ),
             (
                 'Generate data visualization plots',
-                lambda: data_selection_menu('Select visualization data', generate_data_visualization_plots)
+                lambda: data_selection_menu('Select visualization data', visualization_menu)
             ),
             (
                 'Perform data analysis',

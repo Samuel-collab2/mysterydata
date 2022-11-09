@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 from itertools import combinations
 
 from core.constants import MIN_REAL_FEATURE_UNIQUE_VALUES, OUTPUT_DIR
+from core.preprocessing import convert_label_boolean
+
 
 def _write_plot(fig, file):
     try:
@@ -26,9 +28,24 @@ def _create_plot(set_plot, title, x_axis, y_axis, file_name):
     _write_plot(fig, f'{file_name}.png')
     plt.close(fig)
 
+def plot_classification(class_names, x_classes, y_classes, x_axis, y_axis, file_name):
+    def configure_plot(ax):
+        for index, (x_class, y_class) in enumerate(zip(x_classes, y_classes)):
+            ax.scatter(x_class, y_class, s=5, alpha=0.5, zorder=index)
+
+        ax.legend(class_names)
+
+    _create_plot(
+        configure_plot,
+        f'Scatter plot of {y_axis} over {x_axis} with classification',
+        x_axis,
+        y_axis,
+        file_name,
+    )
+
 def plot_scatter(x, y, x_axis, y_axis, file_name):
     _create_plot(
-        lambda ax: ax.scatter(x, y),
+        lambda ax: ax.scatter(x, y, s=5),
         f'Scatter plot of {y_axis} over {x_axis}',
         x_axis,
         y_axis,
@@ -64,13 +81,46 @@ def generate_basic_plots(features, label):
 
 def generate_compound_plots(features, label):
     for column1, column2 in combinations(features.columns, r=2):
-        x1 = features.loc[:, column1]
-        x2 = features.loc[:, column2]
-        x = x1 / x2
+        x = features.loc[:, column1]
+        y = features.loc[:, column2]
+        combined = x / y
 
         compound_column = f'{column1}-{column2}'
-        plot_scatter(x, label, x_axis=compound_column, y_axis=label.name, file_name=f'scatter_{compound_column}')
-        plot_scatter(x1, x2, x_axis=column1, y_axis=column2, file_name=f'correlation_{compound_column}')
+        plot_scatter(combined, label, x_axis=compound_column, y_axis=label.name, file_name=f'scatter_{compound_column}')
+        plot_scatter(x, y, x_axis=column1, y_axis=column2, file_name=f'correlation_{compound_column}')
+
+def _get_classes(x, y, label):
+    class_values = label.unique()
+    classes = {}
+    for class_value in class_values:
+        classes[class_value] = [
+            (x.iloc[index], y.iloc[index]) for index, label_value
+            in enumerate(label)
+            if label_value == class_value
+        ]
+
+    return classes
+
+def generate_classification_plots(features, label):
+    for column1, column2 in combinations(features.columns, r=2):
+        x = features.loc[:, column1]
+        y = features.loc[:, column2]
+        compound_column = f'{column1}-{column2}'
+
+        classes = _get_classes(x, y, label)
+
+        plot_classification(
+            classes.keys(),
+            [
+                [x for x, _ in c] for c in list(classes.values())
+            ],
+            [
+                [y for _, y in c] for c in list(classes.values())
+            ],
+            x_axis=column1,
+            y_axis=column2,
+            file_name=f'classification_{compound_column}'
+        )
 
 def generate_data_visualization_plots(features, label):
     generate_basic_plots(features, label)
