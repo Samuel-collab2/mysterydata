@@ -6,10 +6,10 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.tree import DecisionTreeClassifier
 
 from library.graph import Graph
-from core.preprocessing import balance_binary_dataset
+from core.model_base import BaseModel
 
 
-class NullBinaryClassifier:
+class NullBinaryClassifier(BaseModel):
 
     def fit(self, train_features: pd.DataFrame, train_labels: pd.Series):
         pass

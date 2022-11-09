@@ -6,11 +6,9 @@ from sklearn.metrics import mean_absolute_error
 from core.constants import DATASET_LABEL_NAME, OUTPUT_DIR, SIGNIFICANT_RIDGE_COLUMNS, \
     SIGNIFICANT_FORWARD_STEPWISE_COLUMNS
 from core.constants_submission import SUBMISSION1_RIDGE_FEATURE_SET_COUNTS, SUBMISSION1_PROPAGATION_FEATURE_SET_COUNTS, \
-    SUBMISSION2_MODEL_SETS
+    SUBMISSION2_MODEL_SETS, SUBMISSION3_MODEL_SETS
 from core.loader import load_test_dataset, load_determining_dataset
 from core.model_composite import train_composite
-from core.model_induction import train_random_forest
-from core.model_regression import train_linear_regression
 from core.model_set import ModelSet
 from core.model_set_modifiers import modifier_filter_columns
 from core.preprocessing import separate_features_label, \
@@ -191,3 +189,6 @@ def predict_submission1_propagation(dataset):
 
 def predict_submission2(dataset):
     _predict_model_sets(dataset, "submission2", SUBMISSION2_MODEL_SETS)
+
+def predict_submission3(dataset):
+    _predict_model_sets(dataset, "submission3", SUBMISSION3_MODEL_SETS)
