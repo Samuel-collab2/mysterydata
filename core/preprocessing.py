@@ -29,7 +29,7 @@ def convert_label_binary(label):
     :param label: The label
     :return: The converted label
     """
-    return label.mask(label > 0.0, 1.0)
+    return label.mask((label > 0) | (label < 0), 1)
 
 def convert_label_boolean(label):
     """

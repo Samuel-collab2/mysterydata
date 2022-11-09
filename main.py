@@ -34,9 +34,9 @@ def main():
     raw_features, raw_label = separate_features_label(dataset_raw, DATASET_LABEL_NAME)
 
     categorical_columns = get_categorical_columns(raw_features)
-    dataset = expand_dataset_deterministic(dataset_raw, load_determining_dataset(), categorical_columns)
+    dataset_expanded = expand_dataset_deterministic(dataset_raw, load_determining_dataset(), categorical_columns)
 
-    expanded_features, expanded_label = separate_features_label(dataset, DATASET_LABEL_NAME)
+    expanded_features, expanded_label = separate_features_label(dataset_expanded, DATASET_LABEL_NAME)
 
     binary_label = convert_label_binary(expanded_label)
 
