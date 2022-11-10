@@ -2,7 +2,8 @@ from core.constants import DATASET_LABEL_NAME, DATASET_TRAIN_RATIO, MENU_EXIT, M
     SIGNIFICANT_BINARY_LABEL_COLUMNS, SIGNIFICANT_FORWARD_STEPWISE_COLUMNS, SIGNIFICANT_FEATURE_SET_COUNTS
 from core.data_analysis import perform_linear_regression_analysis, perform_polynomial_complexity_analysis, \
     perform_lasso_lambda_analysis, perform_ridge_lambda_analysis, perform_feature_correlation_analysis
-from core.data_visualization import generate_data_visualization_plots
+from core.data_visualization import generate_classification_plots, \
+    generate_scatter_plots, generate_histogram_plots, generate_compound_plots, generate_correlation_plots
 from core.loader import load_train_dataset, load_standardized_train_dataset, load_determining_dataset
 from core.predict import predict_submission1_ridge, predict_submission1_propagation, predict_submission2, \
     predict_submission3
@@ -34,9 +35,9 @@ def main():
     raw_features, raw_label = separate_features_label(dataset_raw, DATASET_LABEL_NAME)
 
     categorical_columns = get_categorical_columns(raw_features)
-    dataset = expand_dataset_deterministic(dataset_raw, load_determining_dataset(), categorical_columns)
+    dataset_expanded = expand_dataset_deterministic(dataset_raw, load_determining_dataset(), categorical_columns)
 
-    expanded_features, expanded_label = separate_features_label(dataset, DATASET_LABEL_NAME)
+    expanded_features, expanded_label = separate_features_label(dataset_expanded, DATASET_LABEL_NAME)
 
     binary_label = convert_label_binary(expanded_label)
 
@@ -73,6 +74,16 @@ def main():
             ('Perform lasso lambda analysis', lambda: perform_lasso_lambda_analysis(train_data, test_data)),
             ('Perform ridge lambda analysis', lambda: perform_ridge_lambda_analysis(train_data, test_data)),
             ('Perform induction tests (Raw data)', lambda: perform_induction_tests(dataset_raw)),
+            MENU_RETURN
+        ])
+
+    def visualization_menu(features, label):
+        run_menu('Data visualization menu', [
+            ('Generate scatter plots', lambda: generate_scatter_plots(features, label)),
+            ('Generate histogram plots', lambda: generate_histogram_plots(features)),
+            ('Generate compound plots', lambda: generate_compound_plots(features, label)),
+            ('Generate correlation plots', lambda: generate_correlation_plots(features)),
+            ('Generate classification plots', lambda: generate_classification_plots(features, label)),
             MENU_RETURN
         ])
 
@@ -114,6 +125,7 @@ def main():
             ('Expanded: Rejected claim data', select_featureset(reject_features, reject_label)),
             ('Raw: Data', lambda: on_select(raw_features, raw_label)),
             ('Raw: Binary label data', lambda: on_select(raw_features, binary_label)),
+            ('Raw: Categorical', lambda: on_select(raw_features.loc[:, categorical_columns], raw_label)),
             MENU_RETURN
         ])
 
@@ -125,7 +137,7 @@ def main():
             ),
             (
                 'Generate data visualization plots',
-                lambda: data_selection_menu('Select visualization data', generate_data_visualization_plots)
+                lambda: data_selection_menu('Select visualization data', visualization_menu)
             ),
             (
                 'Perform data analysis',
