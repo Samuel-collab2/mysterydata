@@ -15,11 +15,10 @@ class NullBinaryClassifier(BaseModel):
         pass
 
     def predict(self, test_features: pd.DataFrame):
-        return [False
-            for i, sample in test_features.iterrows()]
+        return [False] * len(test_features)
 
-    def score(self, features: pd.DataFrame, labels: pd.Series):
-        return accuracy_score(self.predict(features), labels)
+    def score(self, test_features: pd.DataFrame, test_labels: pd.Series):
+        return accuracy_score(test_labels, self.predict(test_features))
 
 
 class CustomBinaryClassifier(NullBinaryClassifier):
