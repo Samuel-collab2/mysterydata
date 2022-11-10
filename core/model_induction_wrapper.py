@@ -7,15 +7,28 @@ def _null_predicate(_):
 
 
 class ModelInductionWrapper(BaseModel):
+    """
+    Wraps a binary classification model with support for accept/reject overrides.
+    """
 
     def __init__(self, model,
                  predicate_accept=_null_predicate,
                  predicate_reject=_null_predicate):
+        """
+        Initializes a binary classification model wrapper.
+        :param model: the model to wrap
+        :param predicate_accept: a function row->bool
+                                 return true to always accept regardless of classifier results
+        :param predicate_reject: a function row->bool;
+                                 return true to always reject regardless of classifier results
+        """
         self._model = model
         self._predicate_accept = predicate_accept
         self._predicate_reject = predicate_reject
 
     def _handle_predicate(self, predicate, row):
+        # enables accessing nonexistent features in an entry
+        # this is important for brevity when working with feature subsets
         try:
             return predicate(row)
         except KeyError:
@@ -35,6 +48,7 @@ class ModelInductionWrapper(BaseModel):
         pred_features['reject'] = pred_rejects
         pred_features['index'] = range(len(pred_features))
 
+        # reject takes precedence over accept (tie-break)
         rows_reject = pred_features[pred_features['reject'] == True].copy()
         rows_accept = pred_features[
             (pred_features['accept'] == True)
