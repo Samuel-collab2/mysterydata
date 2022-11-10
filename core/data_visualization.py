@@ -41,7 +41,7 @@ def _get_classes(x, y, label):
 def plot_classification(class_names, x_classes, y_classes, x_axis, y_axis, file_name):
     def configure_plot(ax):
         for index, (x_class, y_class) in enumerate(zip(x_classes, y_classes)):
-            ax.scatter(x_class, y_class, s=5, alpha=0.1, zorder=index)
+            ax.scatter(x_class, y_class, s=5, alpha=0.2, zorder=index)
 
         ax.legend(class_names)
 
@@ -113,7 +113,7 @@ def generate_classification_plots(features, label):
         classes = _get_classes(x, y, label)
         plot_classification(
             classes.keys(),
-            *zip(*classes.values()),
+            *zip(*(zip(*points) for points in classes.values())),
             x_axis=column1,
             y_axis=column2,
             file_name=f'classification_{column1}-{column2}'
