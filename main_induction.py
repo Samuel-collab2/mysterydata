@@ -1,20 +1,20 @@
 from os.path import join
 from dataclasses import dataclass
 from itertools import product
-import pandas as pd
 import numpy as np
 
 from sklearn.metrics import precision_score, recall_score, f1_score
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.naive_bayes import GaussianNB
-from sklearn.model_selection import KFold
+from sklearn.model_selection import StratifiedKFold
 
 from core.preprocessing import separate_features_label, split_training_test, \
     convert_label_boolean, get_categorical_columns, expand_dataset_deterministic, \
     balance_binary_dataset
 from core.model_induction import NullBinaryClassifier
 from core.model_induction_nn import NeuralNetworkClassifier
+from core.model_induction_wrapper import ModelInductionWrapper
 from core.constants import OUTPUT_DIR, DATASET_LABEL_NAME, DATASET_TRAIN_RATIO, \
     SIGNIFICANT_BINARY_LABEL_COLUMNS, SIGNIFICANT_FORWARD_STEPWISE_COLUMNS
 
@@ -35,12 +35,7 @@ class ModelPerformance:
 models = [
     (GaussianNB, {}),
     (DecisionTreeClassifier, {}),
-    (RandomForestClassifier, {'n_estimators': 30}),
-    (RandomForestClassifier, {'n_estimators': 30, 'max_depth': 40}),
     (RandomForestClassifier, {'n_estimators': 50}),
-    (RandomForestClassifier, {'n_estimators': 50, 'max_depth': 40}),
-    (RandomForestClassifier, {'n_estimators': 70}),
-    (RandomForestClassifier, {'n_estimators': 70, 'max_depth': 40}),
     (NeuralNetworkClassifier, {'epochs': 50, 'batch_size': 100}),
 ]
 
@@ -51,12 +46,23 @@ modifiers = {
         ('all_prop', SIGNIFICANT_FORWARD_STEPWISE_COLUMNS),
     ],
     'rejection_skew': (1, 2, 4, 8),
+    'wrap_induction': (False, True),
 }
 
 
 def _format_kwargs(**kwargs):
     return ', '.join([f'{key}={value}'
         for key, value in kwargs.items()])
+
+def _should_accept_claim(claim):
+    return (claim['feature11'] == 5
+        or claim['feature9'] == 0
+        or claim['feature13'] == 4
+        or claim['feature14'] == 3
+        or claim['feature18'] == 1)
+
+def _should_reject_claim(claim):
+    return claim['feature7'] == 3
 
 
 def perform_induction_tests(dataset):
@@ -79,6 +85,7 @@ def perform_induction_tests(dataset):
     def evaluate_classifier(model, x_train, y_train, x_test, y_test,
                             feature_subset=features_expanded.columns,
                             rejection_skew=0,
+                            wrap_induction=False,
                             benchmark=None):
         if rejection_skew:
             x_train, y_train = balance_binary_dataset(
@@ -88,6 +95,11 @@ def perform_induction_tests(dataset):
             )
         else:
             x_train = x_train.loc[:, feature_subset]
+
+        if wrap_induction:
+            model = ModelInductionWrapper(model,
+                predicate_accept=_should_accept_claim,
+                predicate_reject=_should_reject_claim)
 
         model.fit(x_train, y_train)
         return evaluate_model(
@@ -107,9 +119,8 @@ def perform_induction_tests(dataset):
 
 
     # HACK: add full column sets at runtime
-    modifiers['feature_subset'].extend([
-        ('all', list(features_expanded.columns)),
-    ])
+    modifiers['feature_subset'].insert(0,
+        ('all', list(features_expanded.columns)))
 
 
     def score_model(model):
@@ -123,13 +134,13 @@ def perform_induction_tests(dataset):
 
 
     model_scores = {}
-    kfold = KFold(n_splits=NUM_K_FOLD_SPLITS)
+    kfold = StratifiedKFold(n_splits=NUM_K_FOLD_SPLITS)
 
     modifier_combinations = product(*modifiers.values())
     for (model_type, model_args), modifier_values in product(models, modifier_combinations):
         model_results = []
 
-        for k, (train_index, test_index) in enumerate(kfold.split(train_features)):
+        for k, (train_index, test_index) in enumerate(kfold.split(train_features, train_labels)):
             x_train, x_test = train_features.iloc[train_index], train_features.iloc[test_index]
             y_train, y_test = train_labels.iloc[train_index], train_labels.iloc[test_index]
 
@@ -196,7 +207,7 @@ def evaluate_model(model, train_features, train_labels, test_features, test_labe
     test_labels = list(test_labels)
 
     num_rows = len(test_features)
-    num_predicted_accepts = sum(pred_labels)
+    num_predicted_accepts = int(sum(pred_labels))
     num_observed_accepts = sum(test_labels)
 
     train_accuracy = model.score(train_features, train_labels)
