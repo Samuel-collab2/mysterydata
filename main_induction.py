@@ -55,7 +55,14 @@ def _format_kwargs(**kwargs):
         for key, value in kwargs.items()])
 
 def _should_accept_claim(claim):
-    return False
+    return (claim['feature11'] == 5
+        or claim['feature9'] == 0
+        or claim['feature13'] == 4
+        or claim['feature14'] == 3
+        or claim['feature18'] == 1)
+
+def _should_reject_claim(claim):
+    return claim['feature7'] == 3
 
 
 def perform_induction_tests(dataset):
@@ -90,7 +97,9 @@ def perform_induction_tests(dataset):
             x_train = x_train.loc[:, feature_subset]
 
         if wrap_induction:
-            model = ModelInductionWrapper(model, predicate=_should_accept_claim)
+            model = ModelInductionWrapper(model,
+                predicate_accept=_should_accept_claim,
+                predicate_reject=_should_reject_claim)
 
         model.fit(x_train, y_train)
         return evaluate_model(
@@ -110,9 +119,8 @@ def perform_induction_tests(dataset):
 
 
     # HACK: add full column sets at runtime
-    modifiers['feature_subset'].extend([
-        ('all', list(features_expanded.columns)),
-    ])
+    modifiers['feature_subset'].insert(0,
+        ('all', list(features_expanded.columns)))
 
 
     def score_model(model):
