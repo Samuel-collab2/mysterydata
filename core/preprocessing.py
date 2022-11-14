@@ -136,3 +136,10 @@ def balance_binary_dataset(train_features, train_labels, skew_true=1, skew_false
 
     train_features, train_labels = separate_features_label(train_samples, dataset_label_name)
     return train_features, train_labels
+
+
+def separate_features_label_and_remove_rowIndex_col(dataset, label_column):
+    return (
+        dataset.drop([label_column, 'rowIndex'], axis='columns', inplace=False),
+        dataset.loc[:, label_column],
+    )
