@@ -1,8 +1,8 @@
 from os.path import join
 from dataclasses import dataclass
 from itertools import product
-import numpy as np
 
+import numpy as np
 from sklearn.metrics import precision_score, recall_score, f1_score
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
@@ -11,7 +11,7 @@ from sklearn.model_selection import StratifiedKFold
 
 from core.preprocessing import separate_features_label, split_training_test, \
     convert_label_boolean, get_categorical_columns, expand_dataset_deterministic, \
-    balance_binary_dataset
+    balance_binary_dataset, create_augmented_features
 from core.model_induction import NullBinaryClassifier
 from core.model_induction_nn import NeuralNetworkClassifier
 from core.model_induction_wrapper import ModelInductionWrapper
@@ -72,6 +72,7 @@ def perform_induction_tests(dataset):
     determining_features, _ = separate_features_label(load_determining_dataset(), DATASET_LABEL_NAME)
     categorical_columns = get_categorical_columns(dataset)
     features_expanded = expand_dataset_deterministic(features, determining_features, categorical_columns)
+    features_augmented = create_augmented_features(features)
     labels_boolean = convert_label_boolean(labels)
 
     (train_features, train_labels), (test_features, test_labels) = split_training_test(

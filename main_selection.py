@@ -11,15 +11,20 @@ def _augment_features(features):
     features_augmented = pd.DataFrame()
     feature_combinations = combinations(features, r=2)
     for feature1, feature2 in feature_combinations:
-        features_product = pd.DataFrame(features[feature1] * features[feature2],
+        feature1_data = features.loc[:, feature1]
+        feature2_data = features.loc[:, feature2]
+
+        features_product = pd.DataFrame(feature1_data * feature2_data,
             columns=[f'{feature1}*{feature2}'])
-        features_quotient = pd.DataFrame(features[feature1] / features[feature2],
+        features_quotient = pd.DataFrame(feature1_data / feature2_data,
             columns=[f'{feature1}/{feature2}'])
+
         features_augmented = pd.concat((
             features_augmented,
             features_product,
             features_quotient
         ), axis='columns')
+
     return features_augmented
 
 
