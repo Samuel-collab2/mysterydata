@@ -10,6 +10,7 @@ def _augment_features(features):
     print(f'Augmenting dataset with {len(features.columns)} features...')
     features_augmented = pd.DataFrame()
     feature_combinations = combinations(features, r=2)
+
     for feature1, feature2 in feature_combinations:
         feature1_data = features.loc[:, feature1]
         feature2_data = features.loc[:, feature2]
@@ -30,10 +31,11 @@ def _augment_features(features):
 
 def print_correlations(correlations_matrix, significance_threshold=0, column_names=None):
     column_names = column_names or correlations_matrix.columns
-
     print(f'Printing correlations with significant feature threshold {significance_threshold}...')
+
     correlations = product(correlations_matrix.iteritems(), column_names)
     correlations_visited = set()
+
     for (column_name, column_values), row_name in correlations:
         if (column_name == row_name
         or (row_name, column_name) in correlations_visited):
@@ -62,6 +64,8 @@ def main(dataset):
 
     features_augmented = _augment_features(features)
     dataset_augmented = pd.concat((features, features_augmented, labels_boolean), axis='columns')
+
+    # search for correlations between augmented features and claim amount
     print_correlations(dataset_augmented.corr(),
         column_names=('ClaimAmount',),
         significance_threshold=0.1)

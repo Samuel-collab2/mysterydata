@@ -91,6 +91,7 @@ SIGNIFICANT_FORWARD_STEPWISE_COLUMNS = [
     'feature13_0',
 ]
 
+# list of features/combinations that yield a label correlation >0.1
 SIGNIFICANT_AUGMENTED_COLUMNS = [
     'feature1',
     'feature1/feature4',
