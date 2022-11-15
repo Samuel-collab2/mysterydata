@@ -45,6 +45,10 @@ def _get_submission_data(dataset):
     raw_train_features, raw_train_label = separate_features_label(raw_train_dataset, DATASET_LABEL_NAME)
 
     categorical_columns = get_categorical_columns(raw_train_dataset)
+
+    categorical_train_features = raw_train_features.loc[:, categorical_columns]
+    categorical_test_features = raw_test_features.loc[:, categorical_columns]
+
     combined_dataset = pd.concat([raw_train_dataset, raw_test_features], axis=0)
     combined_expanded_dataset = expand_dataset_deterministic(
         combined_dataset,
@@ -69,8 +73,15 @@ def _get_submission_data(dataset):
     augmented_train_features = create_augmented_features(raw_train_features, SIGNIFICANT_AUGMENTED_COLUMNS)
     augmented_test_features = create_augmented_features(raw_test_features, SIGNIFICANT_AUGMENTED_COLUMNS)
 
-    processed_train_features = pd.concat((expanded_train_features, augmented_train_features), axis='columns')
-    processed_test_features = pd.concat((expanded_test_features, augmented_test_features), axis='columns')
+    processed_train_features = pd.concat(
+        (expanded_train_features, augmented_train_features, categorical_train_features),
+        axis='columns'
+    )
+
+    processed_test_features = pd.concat(
+        (expanded_test_features, augmented_test_features, categorical_test_features),
+        axis='columns'
+    )
 
     induction_train_label = convert_label_boolean(raw_train_label)
 

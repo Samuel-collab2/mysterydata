@@ -1,3 +1,4 @@
+from core.constants_feature_set import ALL_EXPANDED_FEATURES
 from core.preprocessing import balance_binary_dataset
 
 
@@ -33,3 +34,6 @@ def modifier_balance_binary_data(skew_true=1, skew_false=1):
         return train_features, train_label, test_features, evaluation_features
 
     return modify
+
+def modifier_filter_expanded():
+    return modifier_filter_columns(ALL_EXPANDED_FEATURES)
