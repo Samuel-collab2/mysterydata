@@ -116,11 +116,35 @@ SUBMISSION2_MODEL_SETS = [
 SUBMISSION3_MODEL_SETS = [
     ModelSet(
         name='Test random forest with static regression model',
-        train_induction_model=modify_model(train_random_forest, n_estimators=50, max_depth=40),
+        train_induction_model=modify_model(train_random_forest, n_estimators=50, max_depth=None),
         induction_modifiers=[
             modifier_filter_columns(SIGNIFICANT_BINARY_LABEL_COLUMNS),
             modifier_balance_binary_data(skew_false=8),
         ],
         train_regression_model=train_static_regression,
-    )
+    ),
+    ModelSet(
+        name='Best submission 2 induction and regression',
+        train_induction_model=modify_model(train_random_forest, n_estimators=50, max_depth=None),
+        induction_modifiers=[
+            modifier_filter_columns(SIGNIFICANT_BINARY_LABEL_COLUMNS),
+            modifier_balance_binary_data(skew_false=8),
+        ],
+        train_regression_model=modify_model(train_polynomial_regression, degree=9),
+        regression_modifiers=[
+            modifier_filter_columns(SIGNIFICANT_RIDGE_COLUMNS[:3]),
+        ]
+    ),
+    ModelSet(
+        name='Best submission induction, degree 2 all significant stepwise feature regression',
+        train_induction_model=modify_model(train_random_forest, n_estimators=50, max_depth=None),
+        induction_modifiers=[
+            modifier_filter_columns(SIGNIFICANT_BINARY_LABEL_COLUMNS),
+            modifier_balance_binary_data(skew_false=8),
+        ],
+        train_regression_model=modify_model(train_polynomial_regression, degree=2),
+        regression_modifiers=[
+            modifier_filter_columns(SIGNIFICANT_FORWARD_STEPWISE_COLUMNS),
+        ]
+    ),
 ]
