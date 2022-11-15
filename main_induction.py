@@ -1,6 +1,8 @@
+import math
 from os.path import join
 from dataclasses import dataclass
 from itertools import product
+from shapely.geometry import Point, Polygon
 import numpy as np
 
 from sklearn.metrics import precision_score, recall_score, f1_score
@@ -9,6 +11,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.naive_bayes import GaussianNB
 from sklearn.model_selection import StratifiedKFold
 
+from core.model_induction_boundary import _should_accept_claim, _should_reject_claim
 from core.preprocessing import separate_features_label, split_training_test, \
     convert_label_boolean, get_categorical_columns, expand_dataset_deterministic, \
     balance_binary_dataset
@@ -33,19 +36,13 @@ class ModelPerformance:
 
 
 models = [
-    (GaussianNB, {}),
-    (DecisionTreeClassifier, {}),
     (RandomForestClassifier, {'n_estimators': 50}),
-    (NeuralNetworkClassifier, {'epochs': 50, 'batch_size': 100}),
 ]
 
 # model modifiers: all combinations are considered
 modifiers = {
-    'feature_subset': [
-        ('all_ridge', SIGNIFICANT_BINARY_LABEL_COLUMNS),
-        ('all_prop', SIGNIFICANT_FORWARD_STEPWISE_COLUMNS),
-    ],
-    'rejection_skew': (1, 2, 4, 8),
+    'feature_subset': [],
+    'rejection_skew': [8],
     'wrap_induction': (False, True),
 }
 
@@ -53,17 +50,6 @@ modifiers = {
 def _format_kwargs(**kwargs):
     return ', '.join([f'{key}={value}'
         for key, value in kwargs.items()])
-
-def _should_accept_claim(claim):
-    return (claim['feature11'] == 5
-        or claim['feature9'] == 0
-        or claim['feature13'] == 4
-        or claim['feature14'] == 3
-        or claim['feature18'] == 1)
-
-def _should_reject_claim(claim):
-    return claim['feature7'] == 3
-
 
 def perform_induction_tests(dataset):
     print('Running induction test suite...')
