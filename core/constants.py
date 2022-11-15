@@ -91,5 +91,25 @@ SIGNIFICANT_FORWARD_STEPWISE_COLUMNS = [
     'feature13_0',
 ]
 
+# list of features/combinations that yield a label correlation >0.1
+SIGNIFICANT_AUGMENTED_COLUMNS = [
+    'feature1',
+    'feature1/feature4',
+    'feature1/feature5',
+    'feature1/feature6',
+    'feature1/feature7',
+    'feature1/feature8',
+    'feature1/feature10',
+    'feature1/feature18',
+    'feature1*feature6',
+    'feature1*feature8',
+    'feature1*feature10',
+    'feature1*feature11',
+    'feature1*feature12',
+    'feature1*feature13',
+    'feature1*feature15',
+    'feature1*feature17',
+]
+
 MENU_EXIT = ('Exit', lambda: True)
 MENU_RETURN = ('<<< Back', lambda: True)

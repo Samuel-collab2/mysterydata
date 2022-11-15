@@ -136,3 +136,37 @@ def balance_binary_dataset(train_features, train_labels, skew_true=1, skew_false
 
     train_features, train_labels = separate_features_label(train_samples, dataset_label_name)
     return train_features, train_labels
+
+def create_augmented_features(features, feature_subset):
+    """
+    Augments an existing feature dataset.
+    An augmented feature models a relationship between two features.
+    Atomic features are not included in the resulting matrix.
+    :param features: a data frame containing the features to augment
+    :param feature_subset: a list of augmented feature names to parse
+                           each feature name supports multiplication (*) and division (/)
+    :return: the augmented data frame
+    """
+
+    product_pairs = [pattern.split('*')
+        for pattern in feature_subset
+            if '*' in pattern]
+    quotient_pairs = [pattern.split('/')
+        for pattern in feature_subset
+            if '/' in pattern]
+
+    feature_map = {
+        f'{feature1}*{feature2}': features[feature1] * features[feature2]
+            for feature1, feature2 in product_pairs
+    } | {
+        f'{feature1}/{feature2}': features[feature1] / features[feature2]
+            for feature1, feature2 in quotient_pairs
+    }
+
+    feature_names, feature_data = zip(*feature_map.items())
+    features_augmented = pd.concat(feature_data, axis='columns')
+    features_augmented.columns = feature_names
+
+    # HACK: numpy handles zero division with infs
+    features_augmented.replace(to_replace=float('inf'), value=0, inplace=True)
+    return features_augmented
