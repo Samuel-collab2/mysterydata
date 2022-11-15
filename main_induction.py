@@ -16,8 +16,8 @@ from core.preprocessing import separate_features_label, split_training_test, \
 from core.model_induction import NullBinaryClassifier
 from core.model_induction_nn import NeuralNetworkClassifier
 from core.model_induction_wrapper import ModelInductionWrapper
-from core.constants import OUTPUT_DIR, DATASET_LABEL_NAME, DATASET_TRAIN_RATIO, \
-    SIGNIFICANT_BINARY_LABEL_COLUMNS, SIGNIFICANT_FORWARD_STEPWISE_COLUMNS, \
+from core.constants import OUTPUT_DIR, DATASET_LABEL_NAME, DATASET_TRAIN_RATIO
+from core.constants_feature_set import SIGNIFICANT_BINARY_LABEL_COLUMNS, SIGNIFICANT_FORWARD_STEPWISE_COLUMNS, \
     SIGNIFICANT_AUGMENTED_COLUMNS
 
 

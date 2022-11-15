@@ -73,3 +73,18 @@ class ModelInductionWrapper(BaseModel):
 
     def score(self, test_features, test_labels):
         return self._model.score(test_features, test_labels)
+
+def train_wrapped_induction(train_features, train_label, model, predicate_accept, predicate_reject):
+    model = ModelInductionWrapper(model, predicate_accept, predicate_reject)
+    model.fit(train_features, train_label)
+    return model
+
+def predicate_accept_brandon(claim):
+    return (claim['feature11'] == 5
+        or claim['feature9'] == 0
+        or claim['feature13'] == 4
+        or claim['feature14'] == 3
+        or claim['feature18'] == 1)
+
+def predicate_reject_brandon(claim):
+    return claim['feature7'] == 3
