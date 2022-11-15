@@ -76,7 +76,7 @@ def _perform_cross_validation_analysis(train_model, train_data, domain, domain_n
 
     return min_cv_iteration
 
-def _perform_cross_validation_analysis_2(train_model, train_data, domain, domain_name):
+def perform_cross_validation_analysis_2(train_model, train_data, domain, domain_name):
     cv_sets = ANALYSIS_CROSS_VALIDATION_SETS
     print(f'Calculating error across {domain_name}s: {domain}')
     print(f'Using {cv_sets} cross-validation sets')
@@ -90,6 +90,7 @@ def _perform_cross_validation_analysis_2(train_model, train_data, domain, domain
         train_errors.append(train_error)
         cv_errors.append(cv_error)
 
+    return np.average(train_errors), np.average(cv_errors)
 
 def _perform_composite_analysis(train_model, train_data, test_data, domain, domain_name):
     min_cv_iteration = _perform_cross_validation_analysis(train_model, train_data, domain, domain_name)
