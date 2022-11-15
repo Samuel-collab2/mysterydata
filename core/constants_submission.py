@@ -151,7 +151,33 @@ SUBMISSION3_MODEL_SETS = [
         ]
     ),
     ModelSet(
-        name='Wrapped augmentation, skew 6',
+        name='Best submission induction, degree 2 all significant stepwise feature regression',
+        train_induction_model=modify_model(train_random_forest, n_estimators=50, max_depth=None),
+        induction_modifiers=[
+            modifier_filter_columns(SIGNIFICANT_BINARY_LABEL_COLUMNS),
+            modifier_balance_binary_data(skew_false=8),
+        ],
+        train_regression_model=modify_model(train_polynomial_regression, degree=2),
+        regression_modifiers=[
+            modifier_filter_columns(SIGNIFICANT_FORWARD_STEPWISE_COLUMNS),
+        ]
+    ),
+    ModelSet(
+        name='Wrapped augmentation, skew 6, static regression',
+        train_induction_model=modify_model(
+            train_wrapped_induction,
+            model=RandomForestClassifier(n_estimators=50, max_depth=None),
+            predicate_accept=predicate_accept_brandon,
+            predicate_reject=predicate_reject_brandon,
+        ),
+        induction_modifiers=[
+            modifier_filter_columns(SIGNIFICANT_AUGMENTED_COLUMNS),
+            modifier_balance_binary_data(skew_false=6),
+        ],
+        train_regression_model=train_static_regression,
+    ),
+    ModelSet(
+        name='Wrapped augmentation, skew 6, 9-degree polynomial regression',
         train_induction_model=modify_model(
             train_wrapped_induction,
             model=RandomForestClassifier(n_estimators=50, max_depth=None),
@@ -168,15 +194,24 @@ SUBMISSION3_MODEL_SETS = [
         ]
     ),
     ModelSet(
-        name='Best submission induction, degree 2 all significant stepwise feature regression',
-        train_induction_model=modify_model(train_random_forest, n_estimators=50, max_depth=None),
+        name='Augmented random forest, skew 6, static regression',
+        train_induction_model=modify_model(train_random_forest, n_estimators=90, max_depth=None),
         induction_modifiers=[
-            modifier_filter_columns(SIGNIFICANT_BINARY_LABEL_COLUMNS),
-            modifier_balance_binary_data(skew_false=8),
+            modifier_filter_columns(SIGNIFICANT_AUGMENTED_COLUMNS),
+            modifier_balance_binary_data(skew_false=6),
         ],
-        train_regression_model=modify_model(train_polynomial_regression, degree=2),
+        train_regression_model=train_static_regression,
+    ),
+    ModelSet(
+        name='Augmented random forest, skew 6, 9-degree polynomial regression',
+        train_induction_model=modify_model(train_random_forest, n_estimators=90, max_depth=None),
+        induction_modifiers=[
+            modifier_filter_columns(SIGNIFICANT_AUGMENTED_COLUMNS),
+            modifier_balance_binary_data(skew_false=6),
+        ],
+        train_regression_model=modify_model(train_polynomial_regression, degree=9),
         regression_modifiers=[
-            modifier_filter_columns(SIGNIFICANT_FORWARD_STEPWISE_COLUMNS),
+            modifier_filter_columns(SIGNIFICANT_RIDGE_COLUMNS[:3]),
         ]
     ),
 ]
