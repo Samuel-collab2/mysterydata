@@ -140,8 +140,6 @@ def learning_curve_script():
 def learning_curve_script2():
     dataset_raw = pd.read_csv("../trainingset.csv", low_memory=False)
 
-    data = dataset_raw.sample(frac=subset_fraction)
-
     raw_features, raw_label = proc.separate_features_label(dataset_raw, DATASET_LABEL_NAME)
 
     categorical_columns = proc.get_categorical_columns(raw_features)
