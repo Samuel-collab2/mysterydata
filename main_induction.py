@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from itertools import product
 
 import numpy as np
+import pandas as pd
 from sklearn.metrics import precision_score, recall_score, f1_score
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
@@ -16,7 +17,8 @@ from core.model_induction import NullBinaryClassifier
 from core.model_induction_nn import NeuralNetworkClassifier
 from core.model_induction_wrapper import ModelInductionWrapper
 from core.constants import OUTPUT_DIR, DATASET_LABEL_NAME, DATASET_TRAIN_RATIO, \
-    SIGNIFICANT_BINARY_LABEL_COLUMNS, SIGNIFICANT_FORWARD_STEPWISE_COLUMNS
+    SIGNIFICANT_BINARY_LABEL_COLUMNS, SIGNIFICANT_FORWARD_STEPWISE_COLUMNS, \
+    SIGNIFICANT_AUGMENTED_COLUMNS
 
 
 NUM_BEST_MODELS = 10
@@ -44,6 +46,7 @@ modifiers = {
     'feature_subset': [
         ('all_ridge', SIGNIFICANT_BINARY_LABEL_COLUMNS),
         ('all_prop', SIGNIFICANT_FORWARD_STEPWISE_COLUMNS),
+        ('augmented', SIGNIFICANT_AUGMENTED_COLUMNS),
     ],
     'rejection_skew': (1, 2, 4, 8),
     'wrap_induction': (False, True),
@@ -69,10 +72,13 @@ def perform_induction_tests(dataset):
     print('Running induction test suite...')
 
     features, labels = separate_features_label(dataset, DATASET_LABEL_NAME)
+
     determining_features, _ = separate_features_label(load_determining_dataset(), DATASET_LABEL_NAME)
     categorical_columns = get_categorical_columns(dataset)
     features_expanded = expand_dataset_deterministic(features, determining_features, categorical_columns)
-    features_augmented = create_augmented_features(features)
+    features_augmented = create_augmented_features(features, SIGNIFICANT_AUGMENTED_COLUMNS)
+    features_expanded = pd.concat((features_expanded, features_augmented), axis='columns')
+
     labels_boolean = convert_label_boolean(labels)
 
     (train_features, train_labels), (test_features, test_labels) = split_training_test(

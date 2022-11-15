@@ -137,28 +137,23 @@ def balance_binary_dataset(train_features, train_labels, skew_true=1, skew_false
     train_features, train_labels = separate_features_label(train_samples, dataset_label_name)
     return train_features, train_labels
 
-def create_augmented_features(features):
-    # TODO: define as constant
-    features_subset = [
-        ('feature1', features['feature1']),
-        ('feature1/feature4', features['feature1'] / features['feature4']),
-        ('feature1/feature5', features['feature1'] / features['feature5']),
-        ('feature1/feature6', features['feature1'] / features['feature6']),
-        ('feature1/feature7', features['feature1'] / features['feature7']),
-        ('feature1/feature8', features['feature1'] / features['feature8']),
-        ('feature1/feature10', features['feature1'] / features['feature10']),
-        ('feature1/feature18', features['feature1'] / features['feature18']),
-        ('feature1*feature6', features['feature1'] * features['feature6']),
-        ('feature1*feature8', features['feature1'] * features['feature8']),
-        ('feature1*feature10', features['feature1'] * features['feature10']),
-        ('feature1*feature11', features['feature1'] * features['feature11']),
-        ('feature1*feature12', features['feature1'] * features['feature12']),
-        ('feature1*feature13', features['feature1'] * features['feature13']),
-        ('feature1*feature15', features['feature1'] * features['feature15']),
-        ('feature1*feature17', features['feature1'] * features['feature17']),
-    ]
+def create_augmented_features(features, feature_subset):
+    product_pairs = [pattern.split('*')
+        for pattern in feature_subset
+            if '*' in pattern]
+    quotient_pairs = [pattern.split('/')
+        for pattern in feature_subset
+            if '/' in pattern]
 
-    feature_names, feature_data = zip(*features_subset)
+    feature_map = {
+        f'{feature1}*{feature2}': features[feature1] * features[feature2]
+            for feature1, feature2 in product_pairs
+    } | {
+        f'{feature1}/{feature2}': features[feature1] / features[feature2]
+            for feature1, feature2 in quotient_pairs
+    }
+
+    feature_names, feature_data = zip(*feature_map.items())
     features_augmented = pd.concat(feature_data, axis='columns')
     features_augmented.columns = feature_names
     features_augmented.replace(to_replace=float('inf'), value=0, inplace=True)
