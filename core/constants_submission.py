@@ -1,7 +1,10 @@
+from sklearn.ensemble import RandomForestClassifier
+
 from core.constants_feature_set import SIGNIFICANT_RIDGE_COLUMNS, SIGNIFICANT_BINARY_LABEL_COLUMNS, \
     SIGNIFICANT_FORWARD_STEPWISE_COLUMNS, SIGNIFICANT_AUGMENTED_COLUMNS
 from core.model_induction import train_random_forest, train_decision_tree
 from core.model_induction_nn import train_network_classifier
+from core.model_induction_wrapper import train_wrapped_induction, predicate_accept_brandon, predicate_reject_brandon
 from core.model_regression import train_static_regression, train_linear_regression, train_polynomial_regression
 from core.model_set import ModelSet
 from core.model_set_modifiers import modifier_filter_columns, modify_model, modifier_balance_binary_data
@@ -141,6 +144,23 @@ SUBMISSION3_MODEL_SETS = [
         induction_modifiers=[
             modifier_filter_columns(SIGNIFICANT_AUGMENTED_COLUMNS),
             modifier_balance_binary_data(skew_false=8),
+        ],
+        train_regression_model=modify_model(train_polynomial_regression, degree=9),
+        regression_modifiers=[
+            modifier_filter_columns(SIGNIFICANT_RIDGE_COLUMNS[:3]),
+        ]
+    ),
+    ModelSet(
+        name='Wrapped augmentation, skew 6',
+        train_induction_model=modify_model(
+            train_wrapped_induction,
+            model=RandomForestClassifier(n_estimators=50, max_depth=None),
+            predicate_accept=predicate_accept_brandon,
+            predicate_reject=predicate_reject_brandon,
+        ),
+        induction_modifiers=[
+            modifier_filter_columns(SIGNIFICANT_AUGMENTED_COLUMNS),
+            modifier_balance_binary_data(skew_false=6),
         ],
         train_regression_model=modify_model(train_polynomial_regression, degree=9),
         regression_modifiers=[
