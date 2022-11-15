@@ -5,8 +5,8 @@ import matplotlib.pyplot as plt
 
 from core.preprocessing import separate_features_label, create_augmented_features, \
     convert_label_boolean
-from core.constants import OUTPUT_DIR, DATASET_LABEL_NAME, \
-    SIGNIFICANT_AUGMENTED_COLUMNS
+from core.constants import OUTPUT_DIR, DATASET_LABEL_NAME
+from core.constants_feature_set import SIGNIFICANT_AUGMENTED_COLUMNS
 
 
 def main(dataset):

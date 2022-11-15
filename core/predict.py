@@ -3,8 +3,9 @@ from os import path
 import pandas as pd
 from sklearn.metrics import mean_absolute_error
 
-from core.constants import DATASET_LABEL_NAME, OUTPUT_DIR, SIGNIFICANT_RIDGE_COLUMNS, \
-    SIGNIFICANT_FORWARD_STEPWISE_COLUMNS
+from core.constants import DATASET_LABEL_NAME, OUTPUT_DIR
+from core.constants_feature_set import SIGNIFICANT_RIDGE_COLUMNS, SIGNIFICANT_FORWARD_STEPWISE_COLUMNS, \
+    SIGNIFICANT_AUGMENTED_COLUMNS
 from core.constants_submission import SUBMISSION1_RIDGE_FEATURE_SET_COUNTS, SUBMISSION1_PROPAGATION_FEATURE_SET_COUNTS, \
     SUBMISSION2_MODEL_SETS, SUBMISSION3_MODEL_SETS
 from core.loader import load_test_dataset, load_determining_dataset
@@ -12,7 +13,9 @@ from core.model_composite import train_composite
 from core.model_set import ModelSet
 from core.model_set_modifiers import modifier_filter_columns
 from core.preprocessing import separate_features_label, \
-    split_claims_accept_reject, expand_dataset_deterministic, get_categorical_columns, convert_label_boolean
+    split_claims_accept_reject, expand_dataset_deterministic, get_categorical_columns, convert_label_boolean, \
+    create_augmented_features
+
 
 def _get_submission_dataset():
     return load_test_dataset()
@@ -39,6 +42,8 @@ def _get_submission_data(dataset):
     raw_train_dataset = dataset
     raw_test_features = _get_submission_dataset()
 
+    raw_train_features, raw_train_label = separate_features_label(raw_train_dataset, DATASET_LABEL_NAME)
+
     categorical_columns = get_categorical_columns(raw_train_dataset)
     combined_dataset = pd.concat([raw_train_dataset, raw_test_features], axis=0)
     combined_expanded_dataset = expand_dataset_deterministic(
@@ -51,24 +56,30 @@ def _get_submission_data(dataset):
     expanded_train_dataset = combined_expanded_dataset.iloc[:train_dataset_length]
     expanded_test_dataset = combined_expanded_dataset.iloc[train_dataset_length:]
 
-    expanded_train_features, expanded_train_label = separate_features_label(
+    expanded_train_features, _ = separate_features_label(
         expanded_train_dataset,
         DATASET_LABEL_NAME
     )
 
-    expanded_test_features, expanded_test_label = separate_features_label(
+    expanded_test_features, _ = separate_features_label(
         expanded_test_dataset,
         DATASET_LABEL_NAME
     )
 
-    induction_train_label = convert_label_boolean(expanded_train_label)
+    augmented_train_features = create_augmented_features(raw_train_features, SIGNIFICANT_AUGMENTED_COLUMNS)
+    augmented_test_features = create_augmented_features(raw_test_features, SIGNIFICANT_AUGMENTED_COLUMNS)
 
-    accept_data, _ = split_claims_accept_reject(expanded_train_features, expanded_train_label)
+    processed_train_features = pd.concat((expanded_train_features, augmented_train_features), axis='columns')
+    processed_test_features = pd.concat((expanded_test_features, augmented_test_features), axis='columns')
+
+    induction_train_label = convert_label_boolean(raw_train_label)
+
+    accept_data, _ = split_claims_accept_reject(processed_train_features, raw_train_label)
     accept_train_features, accept_train_label = accept_data
 
-    return (expanded_train_features, induction_train_label, expanded_test_features, expanded_train_features), \
-        (accept_train_features, accept_train_label, expanded_test_features, expanded_train_features), \
-        expanded_train_label
+    return (processed_train_features, induction_train_label, processed_test_features, processed_train_features), \
+        (accept_train_features, accept_train_label, processed_test_features, processed_train_features), \
+        raw_train_label
 
 def _output_predictions(model, induction_test_features, regression_test_features, filename):
     """

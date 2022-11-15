@@ -1,4 +1,4 @@
-from core.constants import SIGNIFICANT_BINARY_LABEL_COLUMNS, SIGNIFICANT_RIDGE_COLUMNS, \
+from core.constants_feature_set import SIGNIFICANT_RIDGE_COLUMNS, SIGNIFICANT_BINARY_LABEL_COLUMNS, \
     SIGNIFICANT_FORWARD_STEPWISE_COLUMNS
 from core.model_induction import train_random_forest, train_decision_tree
 from core.model_induction_nn import train_network_classifier

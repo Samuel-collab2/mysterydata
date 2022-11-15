@@ -1,5 +1,7 @@
-from core.constants import DATASET_LABEL_NAME, DATASET_TRAIN_RATIO, MENU_EXIT, MENU_RETURN, SIGNIFICANT_RIDGE_COLUMNS, \
-    SIGNIFICANT_BINARY_LABEL_COLUMNS, SIGNIFICANT_FORWARD_STEPWISE_COLUMNS, SIGNIFICANT_FEATURE_SET_COUNTS
+from core.constants import DATASET_LABEL_NAME, DATASET_TRAIN_RATIO, MENU_EXIT, MENU_RETURN, \
+    SIGNIFICANT_FEATURE_SET_COUNTS
+from core.constants_feature_set import SIGNIFICANT_RIDGE_COLUMNS, SIGNIFICANT_BINARY_LABEL_COLUMNS, \
+    SIGNIFICANT_FORWARD_STEPWISE_COLUMNS
 from core.data_analysis import perform_linear_regression_analysis, perform_polynomial_complexity_analysis, \
     perform_lasso_lambda_analysis, perform_ridge_lambda_analysis, perform_feature_correlation_analysis
 from core.data_visualization import generate_classification_plots, \
