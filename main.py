@@ -3,7 +3,8 @@ from core.constants import DATASET_LABEL_NAME, DATASET_TRAIN_RATIO, MENU_EXIT, M
 from core.constants_feature_set import SIGNIFICANT_RIDGE_COLUMNS, SIGNIFICANT_BINARY_LABEL_COLUMNS, \
     SIGNIFICANT_FORWARD_STEPWISE_COLUMNS
 from core.data_analysis import perform_linear_regression_analysis, perform_polynomial_complexity_analysis, \
-    perform_lasso_lambda_analysis, perform_ridge_lambda_analysis, perform_feature_correlation_analysis
+    perform_lasso_lambda_analysis, perform_ridge_lambda_analysis, perform_feature_correlation_analysis, \
+    perform_svc_analysis
 from core.data_visualization import generate_classification_plots, \
     generate_scatter_plots, generate_histogram_plots, generate_compound_plots, generate_correlation_plots
 from core.loader import load_train_dataset, load_standardized_train_dataset, load_determining_dataset
@@ -51,6 +52,9 @@ def main():
     def run_dev_test():
         # Intended for temporary development tests
         # Run whatever you want here
+
+
+
         pass
 
     def prediction_menu():
@@ -76,6 +80,7 @@ def main():
             ('Perform lasso lambda analysis', lambda: perform_lasso_lambda_analysis(train_data, test_data)),
             ('Perform ridge lambda analysis', lambda: perform_ridge_lambda_analysis(train_data, test_data)),
             ('Perform induction tests (Raw data)', lambda: perform_induction_tests(dataset_raw)),
+            ('Perform SVC tests', lambda: perform_svc_analysis(train_data, test_data)),
             MENU_RETURN
         ])
 

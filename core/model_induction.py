@@ -3,6 +3,7 @@ import json
 import pandas as pd
 from sklearn.metrics import accuracy_score
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
 
 from library.graph import Graph
@@ -181,5 +182,10 @@ def train_decision_tree(train_features, train_label):
 
 def train_random_forest(train_features, train_label, n_estimators=30, max_depth=40, **kwargs):
     model = RandomForestClassifier(n_estimators=n_estimators, max_depth=max_depth, **kwargs)
+    model.fit(train_features, train_label)
+    return model
+
+def train_svc(train_features, train_label, penalty, kernel="rbf"):
+    model = SVC(C=penalty, kernel=kernel)
     model.fit(train_features, train_label)
     return model
