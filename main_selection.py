@@ -68,7 +68,7 @@ def main(dataset):
     # search for correlations between augmented features and claim amount
     print_correlations(dataset_augmented.corr(),
         column_names=('ClaimAmount',),
-        significance_threshold=0.1)
+        significance_threshold=0.05)
 
 
 if __name__ == '__main__':

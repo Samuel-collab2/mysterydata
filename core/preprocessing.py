@@ -168,5 +168,6 @@ def create_augmented_features(features, feature_subset):
     features_augmented.columns = feature_names
 
     # HACK: numpy handles zero division with infs
-    features_augmented.replace(to_replace=float('inf'), value=0, inplace=True)
+    features_augmented.replace(float('inf'), 0, inplace=True)
+    features_augmented.fillna(0, inplace=True)
     return features_augmented
