@@ -79,8 +79,7 @@ def main():
             ('Perform polynomial complexity analysis', lambda: perform_polynomial_complexity_analysis(train_data, test_data)),
             ('Perform lasso lambda analysis', lambda: perform_lasso_lambda_analysis(train_data, test_data)),
             ('Perform ridge lambda analysis', lambda: perform_ridge_lambda_analysis(train_data, test_data)),
-            ('Perform induction tests (Raw data)', lambda: perform_induction_tests(dataset_raw)),
-            ('Perform SVC tests', lambda: perform_svc_analysis(train_data, test_data)),
+            ('Perform SVC penalty analysis', lambda: perform_svc_analysis(train_data, test_data)),
             MENU_RETURN
         ])
 
