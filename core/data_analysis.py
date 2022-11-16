@@ -6,7 +6,9 @@ from sklearn.metrics import mean_absolute_error
 from sklearn.model_selection import KFold
 
 from core.constants import ANALYSIS_LASSO_LAMBDAS, ANALYSIS_RIDGE_LAMBDAS, ANALYSIS_CROSS_VALIDATION_SETS, \
-    ANALYSIS_POLYNOMIAL_DEGREES, ANALYSIS_SIGNIFICANT_FEATURE_COUNT, ANALYSIS_CORRELATION_THRESHOLD
+    ANALYSIS_POLYNOMIAL_DEGREES, ANALYSIS_SIGNIFICANT_FEATURE_COUNT, ANALYSIS_CORRELATION_THRESHOLD, \
+    ANALYSIS_SVC_PENALTIES
+from core.model_induction import train_svc
 from core.model_regression import train_linear_regression, train_polynomial_regression, train_lasso_regression, \
     train_ridge_regression
 from library.sort import zip_sort
@@ -149,3 +151,13 @@ def perform_feature_correlation_analysis(features):
         correlation = feature1.corr(feature2)
         if abs(correlation) > ANALYSIS_CORRELATION_THRESHOLD:
             print(f'{column1} x {column2}: {correlation}')
+
+def perform_svc_analysis(train_data, test_data):
+    print('Performing svc penalty analysis...')
+    model = _perform_composite_analysis(
+        train_svc,
+        train_data,
+        test_data,
+        ANALYSIS_SVC_PENALTIES,
+        'c'
+    )

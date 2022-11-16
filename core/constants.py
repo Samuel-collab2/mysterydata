@@ -15,6 +15,7 @@ ANALYSIS_CROSS_VALIDATION_SETS = 5
 ANALYSIS_POLYNOMIAL_DEGREES = 20
 ANALYSIS_LASSO_LAMBDAS = [pow(10, exponent) for exponent in np.arange(-5, 1, 0.25)]
 ANALYSIS_RIDGE_LAMBDAS = [pow(10, exponent) for exponent in range(-5, 10)]
+ANALYSIS_SVC_PENALTIES = [pow(10, exponent) for exponent in range(-4, 4)]
 ANALYSIS_SIGNIFICANT_FEATURE_COUNT = 20
 ANALYSIS_CORRELATION_THRESHOLD = 0.45
 
