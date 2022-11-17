@@ -2,12 +2,14 @@ from os.path import join
 from itertools import product, combinations
 import pandas as pd
 
+from sklearn.preprocessing import StandardScaler
+
 from core.preprocessing import separate_features_label, convert_label_boolean
 from core.constants import DATASET_LABEL_NAME, OUTPUT_DIR
 
 
 def _augment_features(features):
-    print(f'Augmenting dataset with {len(features.columns)} features...')
+    print(f'Augmenting {len(features.columns)}-feature dataset...')
     features_augmented = pd.DataFrame()
     feature_combinations = combinations(features, r=2)
 
@@ -50,12 +52,19 @@ def print_correlations(correlations_matrix, significance_threshold=0, column_nam
         print(f'{column_name} x {row_name} -> {combination_significance:.4f}')
 
 
-def main(dataset):
-    features, labels = separate_features_label(dataset, DATASET_LABEL_NAME)
-    features.drop('rowIndex', axis='columns')
-    labels_boolean = convert_label_boolean(labels)
+def main(dataset, boolean=False, standardize=False):
+    dataset.drop('rowIndex', axis='columns', inplace=True)
+    dataset = dataset[dataset[DATASET_LABEL_NAME] > 0]
 
-    dataset_processed = pd.concat((features, labels_boolean), axis='columns')
+    features, labels = separate_features_label(dataset, DATASET_LABEL_NAME)
+
+    if standardize:
+        features = pd.DataFrame(StandardScaler().fit_transform(features), columns=features.columns)
+
+    if boolean:
+        labels = convert_label_boolean(labels)
+
+    dataset_processed = pd.concat((features, labels), axis='columns')
 
     correlations_matrix = dataset_processed.corr()
     correlations_path = join(OUTPUT_DIR, 'correlations.csv')
@@ -63,14 +72,14 @@ def main(dataset):
     print(f'Wrote correlations matrix to {correlations_path}')
 
     features_augmented = _augment_features(features)
-    dataset_augmented = pd.concat((features, features_augmented, labels_boolean), axis='columns')
+    dataset_augmented = pd.concat((features, features_augmented, labels), axis='columns')
 
     # search for correlations between augmented features and claim amount
     print_correlations(dataset_augmented.corr(),
-        column_names=('ClaimAmount',),
-        significance_threshold=0.05)
+        column_names=(DATASET_LABEL_NAME,),
+        significance_threshold=0.1)
 
 
 if __name__ == '__main__':
     from core.loader import load_train_dataset
-    main(dataset=load_train_dataset())
+    main(dataset=load_train_dataset(), standardize=True)
