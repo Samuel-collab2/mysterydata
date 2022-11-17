@@ -5,17 +5,16 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import f1_score
 
 from core.preprocessing import separate_features_label, get_categorical_columns, \
-    expand_dataset_deterministic, convert_label_boolean, create_augmented_features, \
-    balance_binary_dataset
+    expand_dataset_deterministic, convert_label_boolean, create_augmented_features
 from core.constants import DATASET_LABEL_NAME, DATASET_TRAIN_RATIO
 from core.constants_feature_set import SIGNIFICANT_AUGMENTED_COLUMNS
 
 
-NUM_EPOCHS = 10
+NUM_EPOCHS = 3
 
 
 def _balance_dataset(features, labels):
-    return balance_binary_dataset(features, labels, skew_false=6)
+    return features, labels
 
 def get_induction_data(train_data, test_data):
     train_features, train_labels = separate_features_label(train_data, DATASET_LABEL_NAME)
@@ -60,7 +59,11 @@ def get_induction_data(train_data, test_data):
 
 
 def create_model(x_train, y_train):
-    model = RandomForestClassifier(n_estimators=50)
+    model = RandomForestClassifier(
+        n_estimators=50,
+        class_weight='balanced_subsample',
+        bootstrap=False,
+    )
     model.fit(x_train, y_train)
     return model
 
@@ -95,18 +98,18 @@ def sandbox_iterative_induction(train_data, test_data):
     best_model = model
 
     for epoch in range(0, NUM_EPOCHS):
+        print(f'\n-- Epoch {epoch + 1}/{NUM_EPOCHS}')
+
         pred_labels = model.predict(valid_features)
         pred_labels = pd.Series(pred_labels, name=DATASET_LABEL_NAME)
         x_train, y_train = _balance_dataset(
             pd.concat((train_features, valid_features)),
             pd.concat((train_labels, pred_labels)),
         )
-        model = create_model(x_train, y_train)
-
-        print(f'\n-- Epoch {epoch + 1}/{NUM_EPOCHS}')
         x_test, y_test = test_features, test_labels
-        f1 = evaluate_model(model, x_train, y_train, x_test, y_test)
 
+        model = create_model(x_train, y_train)
+        f1 = evaluate_model(model, x_train, y_train, x_test, y_test)
         if f1 > best_f1:
             best_f1 = f1
             best_model = model

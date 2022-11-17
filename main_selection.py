@@ -54,7 +54,9 @@ def print_correlations(correlations_matrix, significance_threshold=0, column_nam
 
 def main(dataset, boolean=False, standardize=False):
     dataset.drop('rowIndex', axis='columns', inplace=True)
-    dataset = dataset[dataset[DATASET_LABEL_NAME] > 0]
+
+    if standardize:
+        dataset = dataset[dataset[DATASET_LABEL_NAME] > 0]
 
     features, labels = separate_features_label(dataset, DATASET_LABEL_NAME)
 
@@ -82,4 +84,4 @@ def main(dataset, boolean=False, standardize=False):
 
 if __name__ == '__main__':
     from core.loader import load_train_dataset
-    main(dataset=load_train_dataset(), standardize=True)
+    main(dataset=load_train_dataset(), boolean=True)

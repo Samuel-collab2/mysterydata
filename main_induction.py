@@ -5,9 +5,7 @@ from itertools import product
 import numpy as np
 import pandas as pd
 from sklearn.metrics import precision_score, recall_score, f1_score
-from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.naive_bayes import GaussianNB
 from sklearn.model_selection import StratifiedKFold
 
 from core.loader import load_determining_dataset
@@ -15,15 +13,13 @@ from core.preprocessing import separate_features_label, split_training_test, \
     convert_label_boolean, get_categorical_columns, expand_dataset_deterministic, \
     balance_binary_dataset, create_augmented_features
 from core.model_induction import NullBinaryClassifier
-from core.model_induction_nn import NeuralNetworkClassifier
 from core.model_induction_wrapper import ModelInductionWrapper
 from core.constants import OUTPUT_DIR, DATASET_LABEL_NAME, DATASET_TRAIN_RATIO
-from core.constants_feature_set import SIGNIFICANT_BINARY_LABEL_COLUMNS, SIGNIFICANT_FORWARD_STEPWISE_COLUMNS, \
-    SIGNIFICANT_AUGMENTED_COLUMNS
+from core.constants_feature_set import SIGNIFICANT_AUGMENTED_COLUMNS
 
 
 NUM_BEST_MODELS = 10
-NUM_K_FOLD_SPLITS = 5
+NUM_K_FOLD_SPLITS = 3
 
 
 @dataclass
@@ -36,21 +32,18 @@ class ModelPerformance:
 
 
 models = [
-    (GaussianNB, {}),
-    (DecisionTreeClassifier, {}),
-    (RandomForestClassifier, {'n_estimators': 50}),
-    (NeuralNetworkClassifier, {'epochs': 50, 'batch_size': 100}),
+    (RandomForestClassifier, {
+        'n_estimators': 50,
+        'class_weight': 'balanced_subsample',
+        'bootstrap': False
+    }),
 ]
 
 # model modifiers: all combinations are considered
 modifiers = {
     'feature_subset': [
-        ('all_ridge', SIGNIFICANT_BINARY_LABEL_COLUMNS),
-        ('all_prop', SIGNIFICANT_FORWARD_STEPWISE_COLUMNS),
         ('augmented', SIGNIFICANT_AUGMENTED_COLUMNS),
     ],
-    'rejection_skew': (1, 2, 4, 8),
-    'wrap_induction': (False, True),
 }
 
 
@@ -127,8 +120,8 @@ def perform_induction_tests(train_data, test_data):
 
 
     # HACK: add full column sets at runtime
-    modifiers['feature_subset'].insert(0,
-        ('all', list(train_features.columns)))
+    # modifiers['feature_subset'].insert(0,
+    #     ('all', list(train_features.columns)))
 
 
     def score_model(model):
