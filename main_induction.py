@@ -10,6 +10,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.naive_bayes import GaussianNB
 from sklearn.model_selection import StratifiedKFold
 
+from core.loader import load_determining_dataset
 from core.preprocessing import separate_features_label, split_training_test, \
     convert_label_boolean, get_categorical_columns, expand_dataset_deterministic, \
     balance_binary_dataset, create_augmented_features
@@ -68,29 +69,22 @@ def _should_reject_claim(claim):
     return claim['feature7'] == 3
 
 
-def perform_induction_tests(dataset):
-    print('Running induction test suite...')
-
-    features, labels = separate_features_label(dataset, DATASET_LABEL_NAME)
-
-    determining_features, _ = separate_features_label(load_determining_dataset(), DATASET_LABEL_NAME)
-    categorical_columns = get_categorical_columns(dataset)
+def _expand_features(features, determining_data=load_determining_dataset()):
+    determining_features, _ = separate_features_label(determining_data, DATASET_LABEL_NAME)
+    categorical_columns = get_categorical_columns(features)
     features_expanded = expand_dataset_deterministic(features, determining_features, categorical_columns)
     features_augmented = create_augmented_features(features, SIGNIFICANT_AUGMENTED_COLUMNS)
-    features_expanded = pd.concat((features_expanded, features_augmented), axis='columns')
+    return pd.concat((features_expanded, features_augmented), axis='columns')
 
-    labels_boolean = convert_label_boolean(labels)
 
-    (train_features, train_labels), (test_features, test_labels) = split_training_test(
-        features_expanded,
-        labels_boolean,
-        train_factor=DATASET_TRAIN_RATIO,
-        shuffle=True,
-        seed=0,
-    )
+def perform_induction_tests(train_data, test_data):
+    print('Running induction test suite...')
+
+    train_features, train_labels = separate_features_label(train_data, DATASET_LABEL_NAME)
+    train_features, train_labels = _expand_features(train_features), convert_label_boolean(train_labels)
 
     def evaluate_classifier(model, x_train, y_train, x_test, y_test,
-                            feature_subset=features_expanded.columns,
+                            feature_subset=train_features.columns,
                             rejection_skew=0,
                             wrap_induction=False,
                             benchmark=None):
@@ -120,14 +114,21 @@ def perform_induction_tests(dataset):
 
 
     print('\nEvaluating performance of null induction model...')
+    (x_train, y_train), (x_test, y_test) = split_training_test(
+        train_features,
+        train_labels,
+        train_factor=DATASET_TRAIN_RATIO,
+        shuffle=True,
+        seed=0,
+    )
     null_benchmark = evaluate_classifier(NullBinaryClassifier(),
-        train_features, train_labels,
-        test_features, test_labels)
+        x_train, y_train,
+        x_test, y_test)
 
 
     # HACK: add full column sets at runtime
     modifiers['feature_subset'].insert(0,
-        ('all', list(features_expanded.columns)))
+        ('all', list(train_features.columns)))
 
 
     def score_model(model):
@@ -246,6 +247,9 @@ def evaluate_model(model, train_features, train_labels, test_features, test_labe
 
 
 if __name__ == '__main__':
-    from core.loader import load_train_dataset, load_determining_dataset
-    print('Loading dataset...')
-    perform_induction_tests(dataset=load_train_dataset())
+    from core.loader import load_train_dataset, load_test_dataset
+    print('Loading data for induction test suite...')
+    perform_induction_tests(
+        train_data=load_train_dataset(),
+        test_data=load_test_dataset(),
+    )
