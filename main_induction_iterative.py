@@ -14,6 +14,9 @@ from core.constants_feature_set import SIGNIFICANT_AUGMENTED_COLUMNS
 NUM_EPOCHS = 10
 
 
+def _balance_dataset(features, labels):
+    return balance_binary_dataset(features, labels, skew_false=6)
+
 def get_induction_data(train_data, test_data):
     train_features, train_labels = separate_features_label(train_data, DATASET_LABEL_NAME)
     test_features = test_data
@@ -56,50 +59,66 @@ def get_induction_data(train_data, test_data):
     )
 
 
-def run_simulation(train_features, train_labels, model=None, epoch=0):
-    x_train, x_test, y_train, y_test = train_test_split(
+def create_model(x_train, y_train):
+    model = RandomForestClassifier(n_estimators=50)
+    model.fit(x_train, y_train)
+    return model
+
+def evaluate_model(model, x_train, y_train, x_test, y_test):
+    f1 = f1_score(y_test, model.predict(x_test))
+    print(f'Training accuracy:\t{model.score(x_train, y_train)*100:.4f}%')
+    print(f'Validation accuracy:\t{model.score(x_test, y_test)*100:.4f}%')
+    print(f'Training F1:\t\t{f1_score(y_train, model.predict(x_train))*100:.4f}%')
+    print(f'Validation F1:\t\t{f1*100:.4f}%')
+    return f1
+
+
+def sandbox_iterative_induction(train_data, test_data):
+    train_features, train_labels, valid_features = get_induction_data(train_data, test_data)
+    train_features, valid_features = (
+        train_features[SIGNIFICANT_AUGMENTED_COLUMNS],
+        valid_features[SIGNIFICANT_AUGMENTED_COLUMNS],
+    )
+
+    train_features, test_features, train_labels, test_labels = train_test_split(
         train_features,
         train_labels,
         train_size=DATASET_TRAIN_RATIO,
     )
-    x_train, y_train = balance_binary_dataset(x_train, y_train, skew_false=6)
 
-    if model is None:
-        model = RandomForestClassifier(n_estimators=50)
-        model.fit(x_train, y_train)
+    model = create_model(*_balance_dataset(train_features, train_labels))
 
-    evaluate_model(model, x_train, x_test, y_train, y_test, epoch=epoch)
-    return model
+    print('\n-- Initial model')
+    init_f1 = evaluate_model(model, train_features, train_labels, test_features, test_labels)
 
-def evaluate_model(model, x_train, x_test, y_train, y_test, epoch):
-    print(f'\n-- Epoch {epoch}/{NUM_EPOCHS}')
-    print(f'Training accuracy:\t{model.score(x_train, y_train)*100:.4f}%')
-    print(f'Validation accuracy:\t{model.score(x_test, y_test)*100:.4f}%')
-    print(f'Training F1:\t\t{f1_score(y_train, model.predict(x_train))*100:.4f}%')
-    print(f'Validation F1:\t\t{f1_score(y_test, model.predict(x_test))*100:.4f}%')
+    best_f1 = init_f1
+    best_model = model
 
-def sandbox_iterative_induction(train_data, test_data):
-    train_features, train_labels, test_features = get_induction_data(train_data, test_data)
-    train_features = train_features[SIGNIFICANT_AUGMENTED_COLUMNS]
-    test_features = test_features[SIGNIFICANT_AUGMENTED_COLUMNS]
-
-    model = run_simulation(train_features, train_labels, epoch=1)
-
-    for epoch in range(2, NUM_EPOCHS):
-        pred_labels = model.predict(test_features)
+    for epoch in range(0, NUM_EPOCHS):
+        pred_labels = model.predict(valid_features)
         pred_labels = pd.Series(pred_labels, name=DATASET_LABEL_NAME)
-        model = run_simulation(
-            pd.concat((train_features, test_features)),
+        x_train, y_train = _balance_dataset(
+            pd.concat((train_features, valid_features)),
             pd.concat((train_labels, pred_labels)),
-            epoch=epoch
         )
+        model = create_model(x_train, y_train)
 
-    run_simulation(train_features, train_labels, model, epoch=NUM_EPOCHS)
+        print(f'\n-- Epoch {epoch + 1}/{NUM_EPOCHS}')
+        x_test, y_test = test_features, test_labels
+        f1 = evaluate_model(model, x_train, y_train, x_test, y_test)
+
+        if f1 > best_f1:
+            best_f1 = f1
+            best_model = model
+
+    print('\n-- Results')
+    print(f'Best model has a validation F1 score of {best_f1*100:.4f}% (+{(best_f1-init_f1)*100:.2f}%)')
+    return best_model
 
 
 if __name__ == '__main__':
     from core.loader import load_train_dataset, load_test_dataset
-    print('Loading data for induction test suite...')
+    print('Loading data for iterative induction test suite...')
     sandbox_iterative_induction(
         train_data=load_train_dataset(),
         test_data=load_test_dataset(),
