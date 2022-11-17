@@ -4,9 +4,7 @@ import pandas as pd
 from sklearn.model_selection import train_test_split, KFold
 from sklearn.metrics import f1_score, precision_score, recall_score, accuracy_score, confusion_matrix
 from sklearn.ensemble import RandomForestClassifier, IsolationForest
-from sklearn.preprocessing import Binarizer
-from sklearn.compose import TransformedTargetRegressor
-from sklearn.pipeline import make_pipeline
+from imblearn.under_sampling import TomekLinks
 
 from core.preprocessing import get_induction_data, separate_features_label
 from core.constants import DATASET_TRAIN_RATIO, DATASET_LABEL_NAME
@@ -210,8 +208,33 @@ def sandbox_induction_skeptical_classifier(train_data, test_data):
     evaluate_model_with_confusion(model, train_features, train_labels, test_features, test_labels,
        decision_boundary=model.DECISION_BOUNDARY)
 
+def sandbox_induction_tomek_links(train_data, test_data):
+    print('Running tomek links sandbox...')
+
+    features, labels, _ = get_induction_data(train_data, test_data)
+    features = features[SIGNIFICANT_AUGMENTED_COLUMNS]
+    train_features, test_features, train_labels, test_labels = train_test_split(
+        features,
+        labels,
+        train_size=DATASET_TRAIN_RATIO,
+    )
+
+    print('\n-- Training random forest...')
+    random_forest = create_model(train_features, train_labels, random_state=0)
+    evaluate_model(random_forest, train_features, train_labels, test_features, test_labels)
+
+    tomek = TomekLinks()
+    tomek_features, tomek_labels = tomek.fit_resample(train_features, train_labels)
+
+    print(f'\nRemoved {len(train_features) - len(tomek_features)} tomek-linked claims')
+    train_features, train_labels = tomek_features, tomek_labels
+
+    print('\n-- Training tomek-pruned random forest...')
+    random_forest = create_model(train_features, train_labels, random_state=0)
+    evaluate_model(random_forest, train_features, train_labels, test_features, test_labels)
+
 def sandbox_induction_isolation_forest(train_data, test_data):
-    print('Running induction probability sandbox...')
+    print('Running isolation forest sandbox...')
 
     features, labels, _ = get_induction_data(train_data, test_data)
     features = features[SIGNIFICANT_AUGMENTED_COLUMNS]
@@ -253,7 +276,7 @@ def sandbox_induction_isolation_forest(train_data, test_data):
 
 if __name__ == '__main__':
     from core.loader import load_train_dataset, load_test_dataset
-    sandbox_induction_isolation_forest(
+    sandbox_induction_tomek_links(
         train_data=load_train_dataset(),
         test_data=load_test_dataset(),
     )
