@@ -1,8 +1,13 @@
 import pandas as pd
 
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import f1_score
+
 from core.preprocessing import separate_features_label, get_categorical_columns, \
-    expand_dataset_deterministic, convert_label_boolean, create_augmented_features
-from core.constants import DATASET_LABEL_NAME
+    expand_dataset_deterministic, convert_label_boolean, create_augmented_features, \
+    balance_binary_dataset
+from core.constants import DATASET_LABEL_NAME, DATASET_TRAIN_RATIO
 from core.constants_feature_set import SIGNIFICANT_AUGMENTED_COLUMNS
 
 
@@ -50,7 +55,22 @@ def get_induction_data(train_data, test_data):
 
 def sandbox_iterative_induction(train_data, test_data):
     train_features, train_labels, test_features = get_induction_data(train_data, test_data)
-    print(train_features.columns)
+    x_train, x_test, y_train, y_test = train_test_split(
+        train_features[SIGNIFICANT_AUGMENTED_COLUMNS],
+        train_labels,
+        train_size=DATASET_TRAIN_RATIO,
+        shuffle=True,
+        random_state=0,
+    )
+    x_train, y_train = balance_binary_dataset(x_train, y_train, skew_false=6)
+
+    model = RandomForestClassifier(n_estimators=50)
+    model.fit(x_train, y_train)
+    pred_labels = model.predict(x_test)
+    print(f'Training accuracy:\t{model.score(x_train, y_train)*100:.4f}%')
+    print(f'Validation accuracy:\t{model.score(x_test, y_test)*100:.4f}%')
+    print(f'Training F1:\t\t{f1_score(y_train, model.predict(x_train))*100:.4f}%')
+    print(f'Validation F1:\t\t{f1_score(y_test, pred_labels)*100:.4f}%')
 
 
 if __name__ == '__main__':
