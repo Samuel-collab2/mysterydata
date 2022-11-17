@@ -35,9 +35,16 @@ def print_correlations(correlations_matrix, significance_threshold=0, column_nam
     column_names = column_names or correlations_matrix.columns
     print(f'Printing correlations with significant feature threshold {significance_threshold}...')
 
-    correlations = product(correlations_matrix.iteritems(), column_names)
-    correlations_visited = set()
+    def order_correlation(correlation):
+        (_, column_values), row_name = correlation
+        return column_values[row_name]
 
+    correlations_visited = set()
+    correlations = sorted(
+        product(correlations_matrix.iteritems(), column_names),
+        key=order_correlation,
+        reverse=True,
+    )
     for (column_name, column_values), row_name in correlations:
         if (column_name == row_name
         or (row_name, column_name) in correlations_visited):
