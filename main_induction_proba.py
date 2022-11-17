@@ -7,6 +7,9 @@ from core.constants import DATASET_TRAIN_RATIO
 from core.constants_feature_set import SIGNIFICANT_AUGMENTED_COLUMNS
 
 
+CONFIDENCE_THRESHOLD = 1 / 2
+
+
 def sandbox_induction_proba(train_data, test_data):
     print('Running induction probability sandbox...')
 
@@ -24,10 +27,46 @@ def sandbox_induction_proba(train_data, test_data):
         bootstrap=False,
     )
     model.fit(train_features, train_labels)
+    print(f'Train F1:\t{f1_score(train_labels, model.predict(train_features))*100:.2f}%')
+    print(f'Test F1:\t{f1_score(test_labels, model.predict(test_features))*100:.2f}%')
+
     pred_proba = model.predict_proba(test_features)
-    _, true_proba = zip(*pred_proba)
-    print(f'Train F1:\t{f1_score(train_labels, model.predict(train_features))*100:.4f}%')
-    print(f'Test F1:\t{f1_score(test_labels, model.predict(test_features))*100:.4f}%')
+    _, accept_proba = zip(*pred_proba)
+
+    num_true_positives = sum(test_labels)
+    num_true_negatives = len(test_labels) - num_true_positives
+    num_true_positives_found = 0
+    num_true_negatives_found = 0
+    num_false_positives_found = 0
+    num_false_negatives_found = 0
+
+    for i, p in enumerate(accept_proba):
+        v = bool(test_labels.iloc[i])
+
+        if p < CONFIDENCE_THRESHOLD and v is False:
+            num_true_negatives_found += 1
+            continue
+
+        if p > 1 - CONFIDENCE_THRESHOLD and v is True:
+            num_true_positives_found += 1
+            continue
+
+        if p < CONFIDENCE_THRESHOLD and v is True:
+            num_false_negatives_found += 1
+            continue
+
+        if p > 1 - CONFIDENCE_THRESHOLD and v is False:
+            num_false_positives_found += 1
+            continue
+
+    print(f'Found {num_true_positives_found}/{num_true_positives} true positive(s)'
+        f' ({num_true_positives_found/num_true_positives*100:.2f}%)')
+    print(f'Found {num_true_negatives_found}/{num_true_negatives} true negative(s)'
+        f' ({num_true_negatives_found/num_true_negatives*100:.2f}%)')
+    print(f'Encountered {num_false_positives_found} false positive(s)'
+        f' ({num_false_positives_found/(num_true_positives_found+num_false_positives_found)*100:.2f}% of positives incorrectly classified)')
+    print(f'Encountered {num_false_negatives_found} false negative(s)'
+        f' ({num_false_negatives_found/(num_true_negatives_found+num_false_negatives_found)*100:.2f}% of negatives incorrectly classified)')
 
 
 if __name__ == '__main__':
