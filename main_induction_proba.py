@@ -2,8 +2,11 @@ import numpy as np
 import pandas as pd
 
 from sklearn.model_selection import train_test_split, KFold
-from sklearn.metrics import f1_score, precision_score, recall_score
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import f1_score, precision_score, recall_score, accuracy_score, confusion_matrix
+from sklearn.ensemble import RandomForestClassifier, IsolationForest
+from sklearn.preprocessing import Binarizer
+from sklearn.compose import TransformedTargetRegressor
+from sklearn.pipeline import make_pipeline
 
 from core.preprocessing import get_induction_data, separate_features_label
 from core.constants import DATASET_TRAIN_RATIO, DATASET_LABEL_NAME
@@ -64,6 +67,21 @@ class SkepticalBinaryClassifier(BaseModel):
         return self._estimators[0].score(test_features, test_labels)
 
 
+class IsolationForestClassifier(BaseModel):
+
+    def __init__(self, *args, **kwargs):
+        self._model = IsolationForest(*args, **kwargs)
+
+    def fit(self, train_features, train_labels):
+        self._model.fit(train_features, train_labels)
+
+    def predict(self, test_features):
+        return self._model.predict(test_features) == -1
+
+    def score(self, test_features, test_labels):
+        return accuracy_score(test_labels, self.predict(test_features))
+
+
 def create_model(train_features=None, train_labels=None, **kwargs):
     model = RandomForestClassifier(**{
         'n_estimators': 50,
@@ -77,10 +95,16 @@ def create_model(train_features=None, train_labels=None, **kwargs):
 
 def evaluate_model(model, train_features, train_labels, test_features, test_labels):
     pred_labels = model.predict(test_features)
-    print(f'Train F1:\t{f1_score(train_labels, model.predict(train_features))*100:.2f}%')
-    print(f'Test F1:\t{f1_score(test_labels, pred_labels)*100:.2f}%')
-    print(f'Test precision:\t{precision_score(test_labels, pred_labels)*100:.2f}%')
-    print(f'Test recall:\t{recall_score(test_labels, pred_labels)*100:.2f}%')
+    print(f'Train F1:        {f1_score(train_labels, model.predict(train_features))*100:.2f}%')
+    print(f'Test F1:         {f1_score(test_labels, pred_labels)*100:.2f}%')
+    print(f'Test precision:  {precision_score(test_labels, pred_labels)*100:.2f}%')
+    print(f'Test recall:     {recall_score(test_labels, pred_labels)*100:.2f}%')
+
+    tn, fp, fn, tp = confusion_matrix(test_labels, model.predict(test_features)).ravel()
+    print(f'True positives:  {tp}/{(tp+fp)} ({tp/(tp+fp)*100:.2f}%)')
+    print(f'True negatives:  {tn}/{(tn+fn)} ({tn/(tn+fn)*100:.2f}%)')
+    print(f'False positives: {fp}/{(tp+fp)} ({fp/(tp+fp)*100:.2f}%)')
+    print(f'False negatives: {fn}/{(tn+fn)} ({fn/(tn+fn)*100:.2f}%)')
 
 def evaluate_model_with_confusion(model, train_features, train_labels, test_features, test_labels, decision_boundary=0.5):
     pred_proba = model.predict_proba(test_features)
@@ -148,8 +172,8 @@ def evaluate_model_with_confusion(model, train_features, train_labels, test_feat
         f' ({num_sure_false_negatives_found/(num_all_negatives_found)*100:.2f}% of negatives incorrectly classified)')
 
 
-def sandbox_induction_proba(train_data, test_data):
-    print('Running induction probability sandbox...')
+def sandbox_induction_skeptical_classifier(train_data, test_data):
+    print('Running skeptical classifier sandbox...')
 
     features, labels, _ = get_induction_data(train_data, test_data)
     features = features[SIGNIFICANT_AUGMENTED_COLUMNS]
@@ -184,12 +208,52 @@ def sandbox_induction_proba(train_data, test_data):
     model = SkepticalBinaryClassifier(estimators)
     model.fit(train_features, train_labels)
     evaluate_model_with_confusion(model, train_features, train_labels, test_features, test_labels,
-        decision_boundary=model.DECISION_BOUNDARY)
+       decision_boundary=model.DECISION_BOUNDARY)
+
+def sandbox_induction_isolation_forest(train_data, test_data):
+    print('Running induction probability sandbox...')
+
+    features, labels, _ = get_induction_data(train_data, test_data)
+    features = features[SIGNIFICANT_AUGMENTED_COLUMNS]
+    train_features, test_features, train_labels, test_labels = train_test_split(
+        features,
+        labels,
+        train_size=DATASET_TRAIN_RATIO,
+    )
+
+    print('\n-- Training isolation forest classifier...')
+    isolation_forest = IsolationForestClassifier()
+    isolation_forest.fit(train_features, train_labels)
+    evaluate_model(isolation_forest, train_features, train_labels, test_features, test_labels)
+
+    train_outliers = isolation_forest.predict(train_features)
+    unproblematic_indices = [i for i, v in enumerate(train_outliers) if not v]
+    train_features = train_features.iloc[unproblematic_indices]
+    train_labels = train_labels.iloc[unproblematic_indices]
+    print(f'Removed {len(train_outliers) - len(unproblematic_indices)} outliers')
+
+    print('\n-- Training random forest classifier...')
+    random_forest = create_model(train_features, train_labels)
+    evaluate_model(random_forest, train_features, train_labels, test_features, test_labels)
+
+    pred_proba = list(zip(*random_forest.predict_proba(test_features)))[1]
+    pred_outlier_indices = {i for i, v in enumerate(isolation_forest.predict(test_features)) if v}
+    test_label_indices = {i for i, v in enumerate(test_labels) if v}
+    positive_indices = {i for i, p in enumerate(pred_proba) if p > 0.5}
+    sure_positive_indices = {i for i, p in enumerate(pred_proba) if p == 1}
+    false_positive_indices = positive_indices - test_label_indices
+    sure_false_positive_indices = sure_positive_indices - test_label_indices
+    sus_false_positives = sure_false_positive_indices & pred_outlier_indices
+    sus_true_positives = test_label_indices & pred_outlier_indices
+    print(f'\n{len(false_positive_indices)} false positives')
+    print(f'{len(sure_false_positive_indices)} sure positives were actually false')
+    print(f'Isolation forest was suspicious of {len(sus_false_positives)} false positives')
+    print(f'Isolation forest was suspicious of {len(sus_true_positives)} true positives')
 
 
 if __name__ == '__main__':
     from core.loader import load_train_dataset, load_test_dataset
-    sandbox_induction_proba(
+    sandbox_induction_isolation_forest(
         train_data=load_train_dataset(),
         test_data=load_test_dataset(),
     )
