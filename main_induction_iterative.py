@@ -4,58 +4,12 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import f1_score
 
-from core.preprocessing import separate_features_label, get_categorical_columns, \
-    expand_dataset_deterministic, convert_label_boolean, create_augmented_features
+from core.preprocessing import get_induction_data
 from core.constants import DATASET_LABEL_NAME, DATASET_TRAIN_RATIO
 from core.constants_feature_set import SIGNIFICANT_AUGMENTED_COLUMNS
 
 
 NUM_EPOCHS = 3
-
-
-def _balance_dataset(features, labels):
-    return features, labels
-
-def get_induction_data(train_data, test_data):
-    train_features, train_labels = separate_features_label(train_data, DATASET_LABEL_NAME)
-    test_features = test_data
-
-    categorical_columns = get_categorical_columns(train_features)
-    categorical_train_features = train_features.loc[:, categorical_columns]
-    categorical_test_features = test_features.loc[:, categorical_columns]
-
-    combined_features = pd.concat((train_features, test_features))
-    combined_expanded_features = expand_dataset_deterministic(
-        combined_features,
-        train_features,
-        categorical_columns,
-    )
-
-    train_size = len(train_features)
-    expanded_train_features = combined_expanded_features.iloc[:train_size]
-    expanded_test_features = combined_expanded_features.iloc[train_size:]
-
-    augmented_train_features = create_augmented_features(train_features, SIGNIFICANT_AUGMENTED_COLUMNS)
-    augmented_test_features = create_augmented_features(test_features, SIGNIFICANT_AUGMENTED_COLUMNS)
-
-    processed_train_features = pd.concat((
-        expanded_train_features,
-        augmented_train_features,
-        categorical_train_features,
-    ), axis='columns')
-
-    processed_test_features = pd.concat((
-        expanded_test_features,
-        augmented_test_features,
-        categorical_test_features,
-    ), axis='columns')
-
-    processed_train_labels = convert_label_boolean(train_labels)
-    return (
-        processed_train_features,
-        processed_train_labels,
-        processed_test_features,
-    )
 
 
 def create_model(x_train, y_train):
@@ -89,7 +43,7 @@ def sandbox_iterative_induction(train_data, test_data):
         train_size=DATASET_TRAIN_RATIO,
     )
 
-    model = create_model(*_balance_dataset(train_features, train_labels))
+    model = create_model(train_features, train_labels)
 
     print('\n-- Initial model')
     init_f1 = evaluate_model(model, train_features, train_labels, test_features, test_labels)
@@ -102,7 +56,7 @@ def sandbox_iterative_induction(train_data, test_data):
 
         pred_labels = model.predict(valid_features)
         pred_labels = pd.Series(pred_labels, name=DATASET_LABEL_NAME)
-        x_train, y_train = _balance_dataset(
+        x_train, y_train = (
             pd.concat((train_features, valid_features)),
             pd.concat((train_labels, pred_labels)),
         )
