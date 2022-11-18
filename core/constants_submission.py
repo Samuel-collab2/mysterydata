@@ -1,5 +1,6 @@
+from imblearn.combine import SMOTETomek
 from sklearn.ensemble import RandomForestClassifier
-from imblearn.under_sampling import TomekLinks, SMOTETomek
+from imblearn.under_sampling import TomekLinks
 
 from core.constants_feature_set import SIGNIFICANT_RIDGE_COLUMNS, SIGNIFICANT_BINARY_LABEL_COLUMNS, \
     SIGNIFICANT_FORWARD_STEPWISE_COLUMNS, SIGNIFICANT_AUGMENTED_COLUMNS
