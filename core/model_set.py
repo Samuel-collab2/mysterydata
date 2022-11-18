@@ -141,6 +141,7 @@ def enumerate_model_set_predictions(train_dataset, test_dataset, model_sets):
             regression_train_label,
             model_set.train_induction_model,
             model_set.train_regression_model,
+            proba_threshold=model_set.proba_threshold,
         )
 
         evaluation_predictions = model.predict(
