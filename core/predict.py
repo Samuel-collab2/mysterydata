@@ -155,7 +155,8 @@ def _predict_model_sets(dataset, prefix, model_sets):
             regression_train_features,
             regression_train_label,
             model_set.train_induction_model,
-            model_set.train_regression_model
+            model_set.train_regression_model,
+            proba_threshold=model_set.proba_threshold,
         )
 
         training_predictions = model.predict(
