@@ -107,7 +107,7 @@ def evaluate_model(model, train_features, train_labels, test_features, test_labe
 
 def evaluate_model_with_confusion(model, train_features, train_labels, test_features, test_labels, decision_boundary=0.5):
     pred_proba = model.predict_proba(test_features)
-    _, accept_proba = zip(*pred_proba)
+    accept_proba = pred_proba[:, 1]
     pred_labels = model.predict(test_features)
 
     print(f'Train F1:\t{f1_score(train_labels, model.predict(train_features))*100:.2f}%')
@@ -117,42 +117,30 @@ def evaluate_model_with_confusion(model, train_features, train_labels, test_feat
 
     num_true_positives = sum(test_labels)
     num_true_negatives = len(test_labels) - num_true_positives
-    num_true_positives_found = 0
-    num_true_negatives_found = 0
 
     false_positive_proba = []
-    num_false_negatives_found = 0
     num_sure_false_positives_found = 0
     num_sure_false_negatives_found = 0
 
     for i, p in enumerate(accept_proba):
         v = bool(test_labels.iloc[i])
 
-        if p <= decision_boundary and v is False:
-            num_true_negatives_found += 1
-            continue
-
-        if p > decision_boundary and v is True:
-            num_true_positives_found += 1
-            continue
-
-        if p == 1 and v is True:
-            num_sure_false_negatives_found += 1
-            continue
+        if p > 1 / 2 and v is False:
+            false_positive_proba.append(p)
 
         if p == 1 and v is False:
             num_sure_false_positives_found += 1
             continue
 
-        if p <= decision_boundary and v is True:
-            num_false_negatives_found += 1
+        if p == 0 and v is True:
+            num_sure_false_negatives_found += 1
             continue
 
-        if p > decision_boundary and v is False:
-            false_positive_proba.append(p)
-            continue
-
-    num_false_positives_found = len(false_positive_proba)
+    num_true_negatives_found, num_false_negatives_found, \
+    num_false_positives_found, num_true_positives_found = confusion_matrix(
+        test_labels,
+        accept_proba > 0.5
+    ).ravel()
     num_all_positives_found = num_true_positives_found + num_false_positives_found
     num_all_negatives_found = num_true_negatives_found + num_false_negatives_found
 
@@ -166,9 +154,7 @@ def evaluate_model_with_confusion(model, train_features, train_labels, test_feat
     print(f'Encountered {num_false_negatives_found} false negative(s)'
         f' ({num_false_negatives_found/(num_all_negatives_found)*100:.2f}% of negatives incorrectly classified)')
     print(f'{num_sure_false_positives_found} of positive(s) were actually false despite 100% probability'
-        f' ({num_sure_false_positives_found/(num_all_positives_found)*100:.2f}% of positives incorrectly classified)')
-    print(f'{num_sure_false_negatives_found} of negative(s) were actually true despite 100% probability'
-        f' ({num_sure_false_negatives_found/(num_all_negatives_found)*100:.2f}% of negatives incorrectly classified)')
+        f' ({num_sure_false_positives_found/(num_false_positives_found)*100:.2f}% of false positives)')
 
 
 def sandbox_induction_skeptical_classifier(train_data, test_data):
@@ -200,7 +186,7 @@ def sandbox_induction_skeptical_classifier(train_data, test_data):
         evaluate_model(model, x_train, y_train, test_features, test_labels)
 
     print('\n-- Benchmark model')
-    model = create_model(train_features, train_labels)
+    model = create_model(train_features, train_labels, class_weight='balanced')
     evaluate_model_with_confusion(model, train_features, train_labels, test_features, test_labels)
 
     print('\n-- Final model')
@@ -312,7 +298,7 @@ def sandbox_induction_threshold_moving(train_data, test_data):
 
 if __name__ == '__main__':
     from core.loader import load_train_dataset, load_test_dataset
-    sandbox_induction_resampler(
+    sandbox_induction_skeptical_classifier(
         train_data=load_train_dataset(),
         test_data=load_test_dataset(),
     )
