@@ -2,7 +2,8 @@ import numpy as np
 import pandas as pd
 
 from sklearn.model_selection import train_test_split, KFold
-from sklearn.metrics import f1_score, precision_score, recall_score, accuracy_score, confusion_matrix
+from sklearn.metrics import f1_score, precision_score, recall_score, \
+    accuracy_score, confusion_matrix
 from sklearn.ensemble import RandomForestClassifier, IsolationForest
 from imblearn.combine import SMOTETomek
 
@@ -274,10 +275,44 @@ def sandbox_induction_isolation_forest(train_data, test_data):
     print(f'Isolation forest was suspicious of {len(sus_false_positives)} false positives')
     print(f'Isolation forest was suspicious of {len(sus_true_positives)} true positives')
 
+def sandbox_induction_threshold_moving(train_data, test_data):
+    print('Running threshold moving sandbox...')
+
+    features, labels, _ = get_induction_data(train_data, test_data)
+    features = features[SIGNIFICANT_AUGMENTED_COLUMNS]
+    train_features, test_features, train_labels, test_labels = train_test_split(
+        features,
+        labels,
+        train_size=DATASET_TRAIN_RATIO,
+    )
+
+    print('\n-- Training random forest classifier...')
+    random_forest = create_model(train_features, train_labels)
+    evaluate_model(random_forest, train_features, train_labels, test_features, test_labels)
+
+    def optimize_threshold(test_labels, pred_proba, metric=f1_score):
+        thresholds = np.arange(0, 1, 0.001)
+        scores = [metric(test_labels, pred_proba >= threshold)
+            for threshold in thresholds]
+        return thresholds[np.argmax(scores)]
+
+    print('\n-- Searching for optimal training probability threshold for max precision on training data...')
+    train_proba = random_forest.predict_proba(train_features)[:, 1]
+    train_threshold = optimize_threshold(train_labels, train_proba, metric=precision_score)
+    train_score = f1_score(train_labels, train_proba >= train_threshold)
+    print(f'Best training threshold is {train_threshold} with training F1 score {train_score*100:.2f}%')
+
+    pred_proba = random_forest.predict_proba(test_features)[:, 1]
+    pred_score = f1_score(test_labels, pred_proba >= train_threshold)
+    print(f'Test F1 score given training threshold is {pred_score*100:.2f}%')
+
+    test_threshold = optimize_threshold(test_labels, pred_proba)
+    test_score = f1_score(test_labels, pred_proba >= test_threshold)
+    print(f'Actual best threshold was {test_threshold:.3f} with test F1 score {test_score*100:.2f}%')
 
 if __name__ == '__main__':
     from core.loader import load_train_dataset, load_test_dataset
-    sandbox_induction_isolation_forest(
+    sandbox_induction_threshold_moving(
         train_data=load_train_dataset(),
         test_data=load_test_dataset(),
     )
