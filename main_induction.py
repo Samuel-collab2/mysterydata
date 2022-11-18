@@ -7,12 +7,16 @@ import pandas as pd
 from sklearn.metrics import precision_score, recall_score, f1_score
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import StratifiedKFold
+from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
+from imblearn.combine import SMOTETomek
 
 from core.loader import load_determining_dataset
 from core.preprocessing import separate_features_label, split_training_test, \
     convert_label_boolean, get_categorical_columns, expand_dataset_deterministic, \
     balance_binary_dataset, create_augmented_features
 from core.model_induction import NullBinaryClassifier
+from core.model_induction_nn import NeuralNetworkClassifier
 from core.model_induction_wrapper import ModelInductionWrapper
 from core.constants import OUTPUT_DIR, DATASET_LABEL_NAME, DATASET_TRAIN_RATIO
 from core.constants_feature_set import SIGNIFICANT_AUGMENTED_COLUMNS
@@ -32,6 +36,15 @@ class ModelPerformance:
 
 
 models = [
+    (NeuralNetworkClassifier, {
+        'epochs': 10,
+        'batch_size': 100,
+        'class_weight': {
+            False: 0.5,
+            True: 5,
+        },
+        'verbose': 1,
+    }),
     (RandomForestClassifier, {
         'n_estimators': 50,
         'class_weight': 'balanced_subsample',
@@ -44,6 +57,8 @@ modifiers = {
     'feature_subset': [
         ('augmented', SIGNIFICANT_AUGMENTED_COLUMNS),
     ],
+    'smote': (False, True),
+    'pca': (0, 10),
 }
 
 
@@ -80,28 +95,50 @@ def perform_induction_tests(train_data, test_data):
                             feature_subset=train_features.columns,
                             rejection_skew=0,
                             wrap_induction=False,
+                            smote=False,
+                            pca=0,
                             benchmark=None):
+        x_train = x_train[feature_subset]
+        x_test = x_test[feature_subset]
+
         if rejection_skew:
             x_train, y_train = balance_binary_dataset(
-                x_train.loc[:, feature_subset],
+                x_train,
                 y_train,
                 skew_false=rejection_skew,
             )
-        else:
-            x_train = x_train.loc[:, feature_subset]
 
         if wrap_induction:
             model = ModelInductionWrapper(model,
                 predicate_accept=_should_accept_claim,
                 predicate_reject=_should_reject_claim)
 
-        model.fit(x_train, y_train)
+        if (smote
+        and not isinstance(model, NullBinaryClassifier)):
+            x_train, y_train = SMOTETomek().fit_resample(x_train, y_train)
+
+        if pca:
+            analyzer = PCA(n_components=pca)
+            x_train = pd.DataFrame(analyzer.fit_transform(x_train),
+                columns=range(pca))
+            x_test = pd.DataFrame(analyzer.fit_transform(x_test),
+                columns=range(pca))
+
+        if isinstance(model, NeuralNetworkClassifier):
+            scaler = StandardScaler()
+            x_train = pd.DataFrame(scaler.fit_transform(x_train),
+                columns=x_train.columns)
+            x_test = pd.DataFrame(scaler.fit_transform(x_test),
+                columns=x_test.columns)
+            model.fit(x_train, y_train,
+                validation_data=(x_test, y_test))
+        else:
+            model.fit(x_train, y_train)
+
         return evaluate_model(
             model,
-            x_train,
-            y_train,
-            x_test.loc[:, feature_subset],
-            y_test,
+            x_train, y_train,
+            x_test, y_test,
             benchmark,
         )
 

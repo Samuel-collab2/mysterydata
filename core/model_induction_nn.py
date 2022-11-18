@@ -1,7 +1,28 @@
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense
+from keras.models import Sequential
+from keras.layers import Dense, Dropout
+from keras.regularizers import l2
+from keras.metrics import AUC
+from keras import backend as K
 
 from core.model_induction import NullBinaryClassifier
+
+
+def recall_m(y_true, y_pred):
+    true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
+    possible_positives = K.sum(K.round(K.clip(y_true, 0, 1)))
+    recall = true_positives / (possible_positives + K.epsilon())
+    return recall
+
+def precision_m(y_true, y_pred):
+    true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
+    predicted_positives = K.sum(K.round(K.clip(y_pred, 0, 1)))
+    precision = true_positives / (predicted_positives + K.epsilon())
+    return precision
+
+def f1_m(y_true, y_pred):
+    precision = precision_m(y_true, y_pred)
+    recall = recall_m(y_true, y_pred)
+    return 2 * ((precision * recall) / (precision + recall + K.epsilon()))
 
 
 class NeuralNetworkClassifier(NullBinaryClassifier):
@@ -13,6 +34,8 @@ class NeuralNetworkClassifier(NullBinaryClassifier):
                  hidden_layer_size=16,
                  optimizer='adam',
                  activation='relu',
+                 verbose=0,
+                 class_weight=None,
                  *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._epochs = epochs
@@ -20,25 +43,42 @@ class NeuralNetworkClassifier(NullBinaryClassifier):
         self._hidden_layer_size = hidden_layer_size
         self._optimizer = optimizer
         self._activation = activation
+        self._verbose = verbose
+        self._class_weight = class_weight
         self._model = None
 
     def _compile_model(self, train_features):
         model = Sequential()
-        model.add(Dense(self._hidden_layer_size, activation=self._activation,
+        model.add(Dense(self._hidden_layer_size,
+            activation=self._activation,
+            kernel_regularizer=l2(0.001)))
+        model.add(Dropout(0.1))
+        model.add(Dense(self._hidden_layer_size,
+            activation=self._activation,
+            kernel_regularizer=l2(0.001),
             input_dim=len(train_features.columns)))
-        model.add(Dense(self._hidden_layer_size, activation=self._activation))
-        model.add(Dense(1, activation='sigmoid'))
+        model.add(Dropout(0.1))
+        model.add(Dense(1,
+            activation='sigmoid',
+            kernel_regularizer=l2(0.001)))
         model.compile(loss='binary_crossentropy',
                       optimizer=self._optimizer,
-                      metrics=['accuracy'])
+                      metrics=[
+                          'sparse_categorical_accuracy',
+                          'binary_accuracy',
+                          f1_m,
+                          AUC(),
+                      ])
         return model
 
-    def fit(self, train_features, train_labels):
+    def fit(self, train_features, train_labels, *args, **kwargs):
         self._model = self._compile_model(train_features)
         self._model.fit(train_features, train_labels,
             epochs=self._epochs,
             batch_size=self._batch_size,
-            verbose=0)
+            class_weight=self._class_weight,
+            verbose=self._verbose,
+            *args, **kwargs)
 
     def predict(self, test_features):
         return [v >= 0.5

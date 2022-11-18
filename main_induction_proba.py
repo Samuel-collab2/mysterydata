@@ -4,7 +4,7 @@ import pandas as pd
 from sklearn.model_selection import train_test_split, KFold
 from sklearn.metrics import f1_score, precision_score, recall_score, accuracy_score, confusion_matrix
 from sklearn.ensemble import RandomForestClassifier, IsolationForest
-from imblearn.under_sampling import TomekLinks
+from imblearn.combine import SMOTETomek
 
 from core.preprocessing import get_induction_data, separate_features_label
 from core.constants import DATASET_TRAIN_RATIO, DATASET_LABEL_NAME
@@ -223,10 +223,11 @@ def sandbox_induction_tomek_links(train_data, test_data):
     random_forest = create_model(train_features, train_labels, random_state=0)
     evaluate_model(random_forest, train_features, train_labels, test_features, test_labels)
 
-    tomek = TomekLinks()
+    print('\n-- Resampling dataset...')
+    tomek = SMOTETomek()
     tomek_features, tomek_labels = tomek.fit_resample(train_features, train_labels)
 
-    print(f'\nRemoved {len(train_features) - len(tomek_features)} tomek-linked claims')
+    print(f'Removed {len(train_features) - len(tomek_features)} tomek-linked claims')
     train_features, train_labels = tomek_features, tomek_labels
 
     print('\n-- Training tomek-pruned random forest...')
@@ -276,7 +277,7 @@ def sandbox_induction_isolation_forest(train_data, test_data):
 
 if __name__ == '__main__':
     from core.loader import load_train_dataset, load_test_dataset
-    sandbox_induction_tomek_links(
+    sandbox_induction_isolation_forest(
         train_data=load_train_dataset(),
         test_data=load_test_dataset(),
     )
