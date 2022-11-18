@@ -20,7 +20,7 @@ def main(dataset):
     pca = PCA(n_components=2, random_state=0)
     pca_points = pca.fit_transform(features_augmented)
 
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(1, 2)
 
     NUM_BINS = 7
     pca_features = pd.DataFrame(pca_points)
@@ -28,16 +28,34 @@ def main(dataset):
         pd.cut(pca_features[1], NUM_BINS),
         pd.cut(pca_features[0], NUM_BINS),
     ]).mean().unstack()
+    heatmap_boundaries = (
+        heatmap_features.min().min(),
+        heatmap_features.max().max()
+    )
 
-    sns.heatmap(heatmap_features,
-        ax=ax,
+    sns.heatmap(heatmap_features[0],
+        ax=ax[0],
+        vmin=heatmap_boundaries[0],
+        vmax=heatmap_boundaries[1],
         cmap='Blues',
         square=True)
-    ax.set_title('PCA for augmented features')
-    ax.set_xlabel('x')
-    ax.set_ylabel('y')
-    ax.legend()
-    ax.invert_yaxis()
+    ax[0].set_title('PCA for augmented features for rejected claims')
+    ax[0].set_xlabel('x')
+    ax[0].set_ylabel('y')
+    ax[0].legend()
+    ax[0].invert_yaxis()
+
+    sns.heatmap(heatmap_features[1],
+        ax=ax[1],
+        vmin=heatmap_boundaries[0],
+        vmax=heatmap_boundaries[1],
+        cmap='Blues',
+        square=True)
+    ax[1].set_title('PCA for augmented features for accepted claims')
+    ax[1].set_xlabel('x')
+    ax[1].set_ylabel('y')
+    ax[1].legend()
+    ax[1].invert_yaxis()
 
     fig_path = join(OUTPUT_DIR, 'heatmap_augmented_pca.png')
     fig.set_figwidth(16)
