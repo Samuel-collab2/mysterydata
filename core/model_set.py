@@ -20,6 +20,7 @@ class ModelSet:
     induction_modifiers: list = field(default_factory=lambda: [modifier_filter_expanded()])
     train_regression_model: callable = field(default=train_linear_regression)
     regression_modifiers: list = field(default_factory=lambda: [modifier_filter_expanded()])
+    proba_threshold: bool = 0.5
 
 
 def get_model_set_data(train_dataset, test_features):

@@ -1,4 +1,6 @@
 from sklearn.ensemble import RandomForestClassifier
+from imblearn.under_sampling import TomekLinks
+from imblearn.combine import SMOTETomek
 
 from core.constants_feature_set import SIGNIFICANT_RIDGE_COLUMNS, SIGNIFICANT_BINARY_LABEL_COLUMNS, \
     SIGNIFICANT_FORWARD_STEPWISE_COLUMNS, SIGNIFICANT_AUGMENTED_COLUMNS
@@ -235,6 +237,23 @@ SUBMISSION4_MODEL_SETS = [
             modifier_filter_columns(SIGNIFICANT_AUGMENTED_COLUMNS),
         ],
         train_regression_model=train_static_regression,
+    ),
+    ModelSet(
+        name='Balanced class weights, all ridge features, degree 2, skeptical regression',
+        train_induction_model=modify_model(
+            train_wrapped_induction,
+            model=RandomForestClassifier(n_estimators=50, class_weight='balanced'),
+            predicate_accept=predicate_accept_brandon,
+            predicate_reject=predicate_reject_brandon,
+        ),
+        induction_modifiers=[
+            modifier_filter_columns(SIGNIFICANT_AUGMENTED_COLUMNS),
+        ],
+        train_regression_model=modify_model(train_polynomial_regression, degree=2),
+        regression_modifiers=[
+            modifier_filter_columns(SIGNIFICANT_RIDGE_COLUMNS),
+        ],
+        proba_threshold=1,
     ),
     ModelSet(
         name='Balanced class weights, no bootstrapping, Tomek links removed',
