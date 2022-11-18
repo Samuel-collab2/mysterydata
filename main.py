@@ -85,6 +85,7 @@ def main():
         ])
 
     def visualization_menu(features, label):
+        print(features.columns)
         run_menu('Data visualization menu', [
             ('Generate scatter plots', lambda: generate_scatter_plots(features, label)),
             ('Generate histogram plots', lambda: generate_histogram_plots(features)),
