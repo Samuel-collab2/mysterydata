@@ -154,7 +154,7 @@ def perform_feature_correlation_analysis(features):
 
 def perform_svc_analysis(train_data, test_data):
     print('Performing svc penalty analysis...')
-    model = _perform_composite_analysis(
+    _perform_composite_analysis(
         train_svc,
         train_data,
         test_data,

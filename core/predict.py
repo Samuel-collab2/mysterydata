@@ -7,7 +7,7 @@ from core.constants import DATASET_LABEL_NAME, OUTPUT_DIR
 from core.constants_feature_set import SIGNIFICANT_RIDGE_COLUMNS, SIGNIFICANT_FORWARD_STEPWISE_COLUMNS, \
     SIGNIFICANT_AUGMENTED_COLUMNS
 from core.constants_submission import SUBMISSION1_RIDGE_FEATURE_SET_COUNTS, SUBMISSION1_PROPAGATION_FEATURE_SET_COUNTS, \
-    SUBMISSION2_MODEL_SETS, SUBMISSION3_MODEL_SETS
+    SUBMISSION2_MODEL_SETS, SUBMISSION3_MODEL_SETS, SUBMISSION4_MODEL_SETS
 from core.loader import load_test_dataset, load_determining_dataset
 from core.model_composite import train_composite
 from core.model_set import ModelSet
@@ -214,3 +214,6 @@ def predict_submission2(dataset):
 
 def predict_submission3(dataset):
     _predict_model_sets(dataset, "submission3", SUBMISSION3_MODEL_SETS)
+
+def predict_submission4(dataset):
+    _predict_model_sets(dataset, "submission4", SUBMISSION4_MODEL_SETS)

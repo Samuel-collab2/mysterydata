@@ -3,6 +3,8 @@ import json
 import pandas as pd
 from sklearn.metrics import accuracy_score
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
 
@@ -185,7 +187,7 @@ def train_random_forest(train_features, train_label, n_estimators=30, max_depth=
     model.fit(train_features, train_label)
     return model
 
-def train_svc(train_features, train_label, penalty, kernel="rbf"):
-    model = SVC(C=penalty, kernel=kernel)
+def train_svc(train_features, train_label, penalty=1.0, kernel="rbf"):
+    model = Pipeline([('Scaler', StandardScaler()), ('Model', SVC(C=penalty, kernel=kernel))])
     model.fit(train_features, train_label)
     return model
