@@ -219,90 +219,90 @@ SUBMISSION3_MODEL_SETS = [
 ]
 
 SUBMISSION4_MODEL_SETS = [
-    # ModelSet(
-    #     name='\"Golden Child\" (balanced class weights, no bootstrapping)',
-    #     train_induction_model=modify_model(
-    #         train_wrapped_induction,
-    #         model=RandomForestClassifier(
-    #             n_estimators=50,
-    #             class_weight='balanced',
-    #             bootstrap=False
-    #         ),
-    #         predicate_accept=predicate_accept_brandon,
-    #         predicate_reject=predicate_reject_brandon,
-    #     ),
-    #     induction_modifiers=[
-    #         modifier_filter_columns(SIGNIFICANT_AUGMENTED_COLUMNS),
-    #     ],
-    #     train_regression_model=train_static_regression,
-    # ),
-    # ModelSet(
-    #     name='Balanced class weights, no bootstrapping, Tomek links removed',
-    #     train_induction_model=modify_model(
-    #         train_wrapped_induction,
-    #         model=RandomForestClassifier(
-    #             n_estimators=50,
-    #             class_weight='balanced',
-    #             bootstrap=False
-    #         ),
-    #         predicate_accept=predicate_accept_brandon,
-    #         predicate_reject=predicate_reject_brandon,
-    #     ),
-    #     induction_modifiers=[
-    #         modifier_filter_columns(SIGNIFICANT_AUGMENTED_COLUMNS),
-    #         modifier_resample(TomekLinks()),
-    #     ],
-    #     train_regression_model=train_static_regression,
-    # ),
-    # ModelSet(
-    #     name='Balanced class weights, no bootstrapping, Tomek links removed, SMOTE oversampling',
-    #     train_induction_model=modify_model(
-    #         train_wrapped_induction,
-    #         model=RandomForestClassifier(
-    #             n_estimators=50,
-    #             class_weight='balanced',
-    #             bootstrap=False
-    #         ),
-    #         predicate_accept=predicate_accept_brandon,
-    #         predicate_reject=predicate_reject_brandon,
-    #     ),
-    #     induction_modifiers=[
-    #         modifier_filter_columns(SIGNIFICANT_AUGMENTED_COLUMNS),
-    #         modifier_resample(SMOTETomek()),
-    #     ],
-    #     train_regression_model=train_static_regression,
-    # ),
-    # ModelSet(
-    #     name='Submission 3 winner, balanced class weights, all ridge features, degree 2',
-    #     train_induction_model=modify_model(
-    #         train_wrapped_induction,
-    #         model=RandomForestClassifier(n_estimators=50, class_weight='balanced'),
-    #         predicate_accept=predicate_accept_brandon,
-    #         predicate_reject=predicate_reject_brandon,
-    #     ),
-    #     induction_modifiers=[
-    #         modifier_filter_columns(SIGNIFICANT_AUGMENTED_COLUMNS),
-    #         modifier_balance_binary_data(skew_false=6),
-    #     ],
-    #     train_regression_model=modify_model(train_polynomial_regression, degree=2),
-    #     regression_modifiers=[
-    #         modifier_filter_columns(SIGNIFICANT_RIDGE_COLUMNS),
-    #     ]
-    # ),
-    # ModelSet(
-    #     name='Boundary rejection 1',
-    #     train_induction_model=modify_model(
-    #         train_boundary_1,
-    #         model=RandomForestClassifier(
-    #             n_estimators=50,
-    #             class_weight='balanced',
-    #             bootstrap=False
-    #         ),
-    #         model_columns=SIGNIFICANT_AUGMENTED_COLUMNS
-    #     ),
-    #     induction_modifiers=[],
-    #     train_regression_model=train_static_regression,
-    # ),
+    ModelSet(
+        name='\"Golden Child\" (balanced class weights, no bootstrapping)',
+        train_induction_model=modify_model(
+            train_wrapped_induction,
+            model=RandomForestClassifier(
+                n_estimators=50,
+                class_weight='balanced',
+                bootstrap=False
+            ),
+            predicate_accept=predicate_accept_brandon,
+            predicate_reject=predicate_reject_brandon,
+        ),
+        induction_modifiers=[
+            modifier_filter_columns(SIGNIFICANT_AUGMENTED_COLUMNS),
+        ],
+        train_regression_model=train_static_regression,
+    ),
+    ModelSet(
+        name='Balanced class weights, no bootstrapping, Tomek links removed',
+        train_induction_model=modify_model(
+            train_wrapped_induction,
+            model=RandomForestClassifier(
+                n_estimators=50,
+                class_weight='balanced',
+                bootstrap=False
+            ),
+            predicate_accept=predicate_accept_brandon,
+            predicate_reject=predicate_reject_brandon,
+        ),
+        induction_modifiers=[
+            modifier_filter_columns(SIGNIFICANT_AUGMENTED_COLUMNS),
+            modifier_resample(TomekLinks()),
+        ],
+        train_regression_model=train_static_regression,
+    ),
+    ModelSet(
+        name='Balanced class weights, no bootstrapping, Tomek links removed, SMOTE oversampling',
+        train_induction_model=modify_model(
+            train_wrapped_induction,
+            model=RandomForestClassifier(
+                n_estimators=50,
+                class_weight='balanced',
+                bootstrap=False
+            ),
+            predicate_accept=predicate_accept_brandon,
+            predicate_reject=predicate_reject_brandon,
+        ),
+        induction_modifiers=[
+            modifier_filter_columns(SIGNIFICANT_AUGMENTED_COLUMNS),
+            modifier_resample(SMOTETomek()),
+        ],
+        train_regression_model=train_static_regression,
+    ),
+    ModelSet(
+        name='Submission 3 winner, balanced class weights, all ridge features, degree 2',
+        train_induction_model=modify_model(
+            train_wrapped_induction,
+            model=RandomForestClassifier(n_estimators=50, class_weight='balanced'),
+            predicate_accept=predicate_accept_brandon,
+            predicate_reject=predicate_reject_brandon,
+        ),
+        induction_modifiers=[
+            modifier_filter_columns(SIGNIFICANT_AUGMENTED_COLUMNS),
+            modifier_balance_binary_data(skew_false=6),
+        ],
+        train_regression_model=modify_model(train_polynomial_regression, degree=2),
+        regression_modifiers=[
+            modifier_filter_columns(SIGNIFICANT_RIDGE_COLUMNS),
+        ]
+    ),
+    ModelSet(
+        name='Boundary rejection 1',
+        train_induction_model=modify_model(
+            train_boundary_1,
+            model=RandomForestClassifier(
+                n_estimators=50,
+                class_weight='balanced',
+                bootstrap=False
+            ),
+            model_columns=SIGNIFICANT_AUGMENTED_COLUMNS
+        ),
+        induction_modifiers=[],
+        train_regression_model=train_static_regression,
+    ),
     ModelSet(
         name='Boundary rejection 2',
         train_induction_model=modify_model(
@@ -318,13 +318,13 @@ SUBMISSION4_MODEL_SETS = [
         train_regression_model=train_static_regression,
     ),
     # Leave SVC models last, they take a bit
-    # ModelSet(
-    #     name='SVC static',
-    #     train_induction_model=modify_model(train_svc, penalty=50),
-    #     induction_modifiers=[
-    #         modifier_filter_columns(SIGNIFICANT_BINARY_LABEL_COLUMNS),
-    #         modifier_balance_binary_data(skew_false=12),
-    #     ],
-    #     train_regression_model=train_static_regression,
-    # ),
+    ModelSet(
+        name='SVC static',
+        train_induction_model=modify_model(train_svc, penalty=50),
+        induction_modifiers=[
+            modifier_filter_columns(SIGNIFICANT_BINARY_LABEL_COLUMNS),
+            modifier_balance_binary_data(skew_false=12),
+        ],
+        train_regression_model=train_static_regression,
+    ),
 ]
