@@ -1,6 +1,8 @@
 from os import mkdir
 from os.path import join
+import pandas as pd
 import matplotlib.pyplot as plt
+import seaborn as sns
 from itertools import combinations
 
 from core.constants import OUTPUT_DIR
@@ -13,7 +15,7 @@ def _write_plot(fig, file):
 
     fig_path = join(OUTPUT_DIR, file)
     fig.savefig(fig_path, bbox_inches='tight')
-
+    plt.close(fig)
     print(f'Wrote plot to {fig_path}')
 
 def _create_plot(set_plot, title, x_axis, y_axis, file_name):
@@ -80,6 +82,43 @@ def plot_hist(x, bins, x_axis, y_axis, file_name):
         file_name,
     )
 
+def plot_heatmap(x, y, x_axis, y_axis, num_bins, file_name):
+    fig, ax = plt.subplots(1, 2)
+
+    features = pd.concat((
+        pd.DataFrame(),
+        pd.Series(x.values),
+        pd.Series(y.values),
+    ), axis='columns')
+    features.columns = (0, 1)
+    heatmap_features = features.groupby([
+        pd.cut(features[1], num_bins),
+        pd.cut(features[0], num_bins),
+    ]).mean().unstack()
+    heatmap_min = heatmap_features.min().min()
+    heatmap_max = heatmap_features.max().max()
+
+    def subplot_heatmap(features, ax):
+        sns.heatmap(features,
+            ax=ax,
+            vmin=heatmap_min,
+            vmax=heatmap_max,
+            cmap='Blues',
+            square=True)
+        ax.set_xlabel(x_axis)
+        ax.set_ylabel(y_axis)
+        ax.invert_yaxis()
+
+    subplot_heatmap(heatmap_features[0], ax[0])
+    ax[0].set_title('Heatmap for rejected claims')
+
+    subplot_heatmap(heatmap_features[1], ax[1])
+    ax[1].set_title('Heatmap for accepted claims')
+
+    fig.set_figwidth(16)
+    _write_plot(fig, f'{file_name}.png')
+
+
 def generate_scatter_plots(features, label):
     for column in features.columns:
         x = features.loc[:, column]
@@ -104,6 +143,22 @@ def generate_correlation_plots(features):
         y = features.loc[:, column2]
 
         plot_scatter(x, y, x_axis=column1, y_axis=column2, file_name=f'correlation_{column1}-{column2}')
+
+def generate_correlation_heatmaps(features, label):
+    features = features.drop('rowIndex', axis='columns', inplace=False)
+
+    for column1, column2 in combinations(features.columns, r=2):
+        x = features.loc[:, column1]
+        y = features.loc[:, column2]
+
+        # classes = _get_classes(x, y, label)
+        plot_heatmap(
+            x,
+            y,
+            x_axis=column1,
+            y_axis=column2,
+            num_bins=7,
+            file_name=f'heatmap_{column1}-{column2}')
 
 def generate_classification_plots(features, label):
     for column1, column2 in combinations(features.columns, r=2):

@@ -5,7 +5,8 @@ from core.constants_feature_set import SIGNIFICANT_RIDGE_COLUMNS, SIGNIFICANT_BI
 from core.data_analysis import perform_linear_regression_analysis, perform_polynomial_complexity_analysis, \
     perform_lasso_lambda_analysis, perform_ridge_lambda_analysis, perform_feature_correlation_analysis
 from core.data_visualization import generate_classification_plots, \
-    generate_scatter_plots, generate_histogram_plots, generate_compound_plots, generate_correlation_plots
+    generate_scatter_plots, generate_histogram_plots, generate_compound_plots, \
+    generate_correlation_plots, generate_correlation_heatmaps
 from core.loader import load_train_dataset, load_standardized_train_dataset, load_determining_dataset
 from core.predict import predict_submission1_ridge, predict_submission1_propagation, predict_submission2, \
     predict_submission3
@@ -85,6 +86,7 @@ def main():
             ('Generate histogram plots', lambda: generate_histogram_plots(features)),
             ('Generate compound plots', lambda: generate_compound_plots(features, label)),
             ('Generate correlation plots', lambda: generate_correlation_plots(features)),
+            ('Generate correlation heatmaps', lambda: generate_correlation_heatmaps(features, label)),
             ('Generate classification plots', lambda: generate_classification_plots(features, label)),
             MENU_RETURN
         ])
