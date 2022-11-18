@@ -37,3 +37,9 @@ def modifier_balance_binary_data(skew_true=1, skew_false=1):
 
 def modifier_filter_expanded():
     return modifier_filter_columns(ALL_EXPANDED_FEATURES)
+
+def modifier_resample(resampler):
+    return lambda train_features, train_label, test_features, evaluation_features: (
+        *resampler.fit_resample(train_features, train_label),
+        test_features, evaluation_features
+    )
