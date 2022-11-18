@@ -5,6 +5,7 @@ from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import IsolationForest
 from sklearn.preprocessing import StandardScaler, PolynomialFeatures
 from sklearn.pipeline import make_pipeline
+from sklearn.decomposition import PCA
 
 from core.loader import load_train_dataset
 from core.preprocessing import separate_features_label, create_augmented_features, \
@@ -18,8 +19,12 @@ from core.constants import DATASET_LABEL_NAME, DATASET_TRAIN_RATIO
 def evaluate_model(model,
                    train_features, train_labels,
                    test_features, test_labels,
-                   feature_subset,
+                   feature_subset=None,
                    standardize=False):
+    if feature_subset is not None:
+        train_features = train_features[feature_subset]
+        test_features = test_features[feature_subset]
+
     if standardize:
         scaler = StandardScaler()
         train_features = pd.DataFrame(scaler.fit_transform(train_features),
@@ -30,8 +35,8 @@ def evaluate_model(model,
     model = (model()
         if isinstance(model, type)
         else model)
-    model.fit(train_features[feature_subset], train_labels)
-    print_model_metrics(model, test_features[feature_subset], test_labels)
+    model.fit(train_features, train_labels)
+    print_model_metrics(model, test_features, test_labels)
 
 def print_model_metrics(model, test_features, test_labels):
     error = mean_absolute_error(test_labels, model.predict(test_features))
@@ -92,7 +97,7 @@ def sandbox_regression(dataset):
         LinearRegression()
     ), *dataset, feature_subset=SIGNIFICANT_RIDGE_COLUMNS)
 
-    print('\n-- Evaluating linear regression with ridge features and outliers extracted...')
+    print('\n-- Evaluating linear regression with ridge features and isolation forest outlier extraction...')
     iso = IsolationForest(n_estimators=100)
     iso.fit(train_features, train_labels)
     pred_inliers = iso.predict(train_features)
@@ -102,6 +107,12 @@ def sandbox_regression(dataset):
         train_features.iloc[inlier_indices], train_labels.iloc[inlier_indices],
         test_features, test_labels,
         feature_subset=SIGNIFICANT_RIDGE_COLUMNS)
+
+    print('\n-- Evaluating linear regression with augmented features and 2-component PCA...')
+    pca = PCA(n_components=2, random_state=0)
+    evaluate_model(LinearRegression(),
+        pca.fit_transform(train_features[SIGNIFICANT_AUGMENTED_POSITIVE_REGRESSION_COLUMNS]), train_labels,
+        pca.fit_transform(test_features[SIGNIFICANT_AUGMENTED_POSITIVE_REGRESSION_COLUMNS]), test_labels)
 
 
 if __name__ == '__main__':
