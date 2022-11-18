@@ -52,9 +52,6 @@ def main():
     def run_dev_test():
         # Intended for temporary development tests
         # Run whatever you want here
-
-
-
         pass
 
     def prediction_menu():
