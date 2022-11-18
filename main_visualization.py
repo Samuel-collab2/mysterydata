@@ -6,12 +6,12 @@ import matplotlib.pyplot as plt
 from core.preprocessing import separate_features_label, create_augmented_features, \
     convert_label_boolean
 from core.constants import OUTPUT_DIR, DATASET_LABEL_NAME
-from core.constants_feature_set import SIGNIFICANT_AUGMENTED_COLUMNS
+from core.constants_feature_set import SIGNIFICANT_AUGMENTED_INDUCTION_COLUMNS
 
 
 def main(dataset):
     features, labels = separate_features_label(dataset, DATASET_LABEL_NAME)
-    features_augmented = create_augmented_features(features, SIGNIFICANT_AUGMENTED_COLUMNS)
+    features_augmented = create_augmented_features(features, SIGNIFICANT_AUGMENTED_INDUCTION_COLUMNS)
     labels_boolean = convert_label_boolean(labels)
 
     pca = PCA(n_components=2, random_state=0)

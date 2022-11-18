@@ -19,7 +19,7 @@ from core.model_induction import NullBinaryClassifier
 from core.model_induction_nn import NeuralNetworkClassifier
 from core.model_induction_wrapper import ModelInductionWrapper
 from core.constants import OUTPUT_DIR, DATASET_LABEL_NAME, DATASET_TRAIN_RATIO
-from core.constants_feature_set import SIGNIFICANT_AUGMENTED_COLUMNS
+from core.constants_feature_set import SIGNIFICANT_AUGMENTED_INDUCTION_COLUMNS
 
 
 NUM_BEST_MODELS = 10
@@ -55,7 +55,7 @@ models = [
 # model modifiers: all combinations are considered
 modifiers = {
     'feature_subset': [
-        ('augmented', SIGNIFICANT_AUGMENTED_COLUMNS),
+        ('augmented', SIGNIFICANT_AUGMENTED_INDUCTION_COLUMNS),
     ],
     'smote': (False, True),
     'pca': (0, 10),
@@ -81,7 +81,7 @@ def _expand_features(features, determining_data=load_determining_dataset()):
     determining_features, _ = separate_features_label(determining_data, DATASET_LABEL_NAME)
     categorical_columns = get_categorical_columns(features)
     features_expanded = expand_dataset_deterministic(features, determining_features, categorical_columns)
-    features_augmented = create_augmented_features(features, SIGNIFICANT_AUGMENTED_COLUMNS)
+    features_augmented = create_augmented_features(features, SIGNIFICANT_AUGMENTED_INDUCTION_COLUMNS)
     return pd.concat((features_expanded, features_augmented), axis='columns')
 
 

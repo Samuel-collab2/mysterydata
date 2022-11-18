@@ -5,7 +5,7 @@ from sklearn.metrics import mean_absolute_error
 
 from core.constants import DATASET_LABEL_NAME, OUTPUT_DIR
 from core.constants_feature_set import SIGNIFICANT_RIDGE_COLUMNS, SIGNIFICANT_FORWARD_STEPWISE_COLUMNS, \
-    SIGNIFICANT_AUGMENTED_COLUMNS
+    SIGNIFICANT_AUGMENTED_INDUCTION_COLUMNS
 from core.constants_submission import SUBMISSION1_RIDGE_FEATURE_SET_COUNTS, SUBMISSION1_PROPAGATION_FEATURE_SET_COUNTS, \
     SUBMISSION2_MODEL_SETS, SUBMISSION3_MODEL_SETS
 from core.loader import load_test_dataset, load_determining_dataset
@@ -70,8 +70,8 @@ def _get_submission_data(dataset):
         DATASET_LABEL_NAME
     )
 
-    augmented_train_features = create_augmented_features(raw_train_features, SIGNIFICANT_AUGMENTED_COLUMNS)
-    augmented_test_features = create_augmented_features(raw_test_features, SIGNIFICANT_AUGMENTED_COLUMNS)
+    augmented_train_features = create_augmented_features(raw_train_features, SIGNIFICANT_AUGMENTED_INDUCTION_COLUMNS)
+    augmented_test_features = create_augmented_features(raw_test_features, SIGNIFICANT_AUGMENTED_INDUCTION_COLUMNS)
 
     processed_train_features = pd.concat(
         (expanded_train_features, augmented_train_features, categorical_train_features),

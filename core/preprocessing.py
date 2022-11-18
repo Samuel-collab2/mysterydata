@@ -1,7 +1,7 @@
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from core.constants import MIN_REAL_FEATURE_UNIQUE_VALUES, DATASET_LABEL_NAME
-from core.constants_feature_set import SIGNIFICANT_AUGMENTED_COLUMNS
+from core.constants_feature_set import SIGNIFICANT_AUGMENTED_INDUCTION_COLUMNS
 
 def separate_features_label(dataset, label_column):
     return (
@@ -192,8 +192,8 @@ def get_induction_data(train_data, test_data):
     expanded_train_features = combined_expanded_features.iloc[:train_size]
     expanded_test_features = combined_expanded_features.iloc[train_size:]
 
-    augmented_train_features = create_augmented_features(train_features, SIGNIFICANT_AUGMENTED_COLUMNS)
-    augmented_test_features = create_augmented_features(test_features, SIGNIFICANT_AUGMENTED_COLUMNS)
+    augmented_train_features = create_augmented_features(train_features, SIGNIFICANT_AUGMENTED_INDUCTION_COLUMNS)
+    augmented_test_features = create_augmented_features(test_features, SIGNIFICANT_AUGMENTED_INDUCTION_COLUMNS)
 
     processed_train_features = pd.concat((
         expanded_train_features,

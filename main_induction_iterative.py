@@ -6,7 +6,7 @@ from sklearn.metrics import f1_score
 
 from core.preprocessing import get_induction_data
 from core.constants import DATASET_LABEL_NAME, DATASET_TRAIN_RATIO
-from core.constants_feature_set import SIGNIFICANT_AUGMENTED_COLUMNS
+from core.constants_feature_set import SIGNIFICANT_AUGMENTED_INDUCTION_COLUMNS
 
 
 NUM_EPOCHS = 3
@@ -33,8 +33,8 @@ def evaluate_model(model, x_train, y_train, x_test, y_test):
 def sandbox_iterative_induction(train_data, test_data):
     train_features, train_labels, valid_features = get_induction_data(train_data, test_data)
     train_features, valid_features = (
-        train_features[SIGNIFICANT_AUGMENTED_COLUMNS],
-        valid_features[SIGNIFICANT_AUGMENTED_COLUMNS],
+        train_features[SIGNIFICANT_AUGMENTED_INDUCTION_COLUMNS],
+        valid_features[SIGNIFICANT_AUGMENTED_INDUCTION_COLUMNS],
     )
 
     train_features, test_features, train_labels, test_labels = train_test_split(

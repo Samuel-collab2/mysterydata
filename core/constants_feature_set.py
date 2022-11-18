@@ -111,7 +111,7 @@ SIGNIFICANT_FORWARD_STEPWISE_COLUMNS = [
     'feature13_0',
 ]
 
-SIGNIFICANT_AUGMENTED_COLUMNS = [
+SIGNIFICANT_AUGMENTED_INDUCTION_COLUMNS = [
     'feature1',
     'feature1*feature2',
     'feature1/feature3',
@@ -131,4 +131,30 @@ SIGNIFICANT_AUGMENTED_COLUMNS = [
     'feature1*feature17',
     'feature1*feature18',
     'feature3/feature5',
+]
+
+SIGNIFICANT_AUGMENTED_REGRESSION_COLUMNS = [
+    'feature15/feature16',
+    'feature10/feature16',
+    'feature2/feature16',
+    'feature2/feature3',
+    'feature12/feature18',
+    'feature4/feature16',
+    'feature8/feature16',
+    'feature9/feature16',
+    'feature15/feature18',
+    'feature14/feature16',
+    'feature2/feature7',
+    'feature2/feature6',
+    'feature12/feature13',
+    'feature15',
+    'feature12/feature16',
+    'feature12/feature14',
+    'feature17/feature18',
+    'feature13/feature16',
+    'feature5/feature16',
+    'feature12',
+    'feature2/feature13',
+    'feature2*feature15',
+    'feature10/feature13',
 ]

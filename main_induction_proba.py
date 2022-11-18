@@ -9,7 +9,7 @@ from imblearn.combine import SMOTEENN
 
 from core.preprocessing import get_induction_data, separate_features_label
 from core.constants import DATASET_TRAIN_RATIO, DATASET_LABEL_NAME
-from core.constants_feature_set import SIGNIFICANT_AUGMENTED_COLUMNS
+from core.constants_feature_set import SIGNIFICANT_AUGMENTED_INDUCTION_COLUMNS
 from core.model_base import BaseModel
 
 
@@ -175,7 +175,7 @@ def sandbox_induction_skeptical_classifier(train_data, test_data):
     print('Running skeptical classifier sandbox...')
 
     features, labels, _ = get_induction_data(train_data, test_data)
-    features = features[SIGNIFICANT_AUGMENTED_COLUMNS]
+    features = features[SIGNIFICANT_AUGMENTED_INDUCTION_COLUMNS]
     train_features, test_features, train_labels, test_labels = train_test_split(
         features,
         labels,
@@ -213,7 +213,7 @@ def sandbox_induction_resampler(train_data, test_data):
     print('Running resampler sandbox...')
 
     features, labels, _ = get_induction_data(train_data, test_data)
-    features = features[SIGNIFICANT_AUGMENTED_COLUMNS]
+    features = features[SIGNIFICANT_AUGMENTED_INDUCTION_COLUMNS]
     train_features, test_features, train_labels, test_labels = train_test_split(
         features,
         labels,
@@ -239,7 +239,7 @@ def sandbox_induction_isolation_forest(train_data, test_data):
     print('Running isolation forest sandbox...')
 
     features, labels, _ = get_induction_data(train_data, test_data)
-    features = features[SIGNIFICANT_AUGMENTED_COLUMNS]
+    features = features[SIGNIFICANT_AUGMENTED_INDUCTION_COLUMNS]
     train_features, test_features, train_labels, test_labels = train_test_split(
         features,
         labels,
@@ -279,7 +279,7 @@ def sandbox_induction_threshold_moving(train_data, test_data):
     print('Running threshold moving sandbox...')
 
     features, labels, _ = get_induction_data(train_data, test_data)
-    features = features[SIGNIFICANT_AUGMENTED_COLUMNS]
+    features = features[SIGNIFICANT_AUGMENTED_INDUCTION_COLUMNS]
     train_features, test_features, train_labels, test_labels = train_test_split(
         features,
         labels,
