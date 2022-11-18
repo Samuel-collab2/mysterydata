@@ -2,6 +2,7 @@ import pandas as pd
 from sklearn.metrics import mean_absolute_error
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
+from sklearn.ensemble import IsolationForest
 from sklearn.preprocessing import StandardScaler, PolynomialFeatures
 from sklearn.pipeline import make_pipeline
 
@@ -34,7 +35,7 @@ def evaluate_model(model,
 
 def print_model_metrics(model, test_features, test_labels):
     error = mean_absolute_error(test_labels, model.predict(test_features))
-    print(f'Mean absolute error: {error:.4f}')
+    print(f'MAE: {error:.4f}')
 
 def sandbox_regression(dataset):
     print('Running regression sandbox...')
@@ -90,6 +91,17 @@ def sandbox_regression(dataset):
         PolynomialFeatures(degree=2),
         LinearRegression()
     ), *dataset, feature_subset=SIGNIFICANT_RIDGE_COLUMNS)
+
+    print('\n-- Evaluating linear regression with ridge features and outliers extracted...')
+    iso = IsolationForest(n_estimators=100)
+    iso.fit(train_features, train_labels)
+    pred_inliers = iso.predict(train_features)
+    inlier_indices = [i for i, v in enumerate(pred_inliers) if v == 1]
+    print(f'Extracted {len(train_features) - len(inlier_indices)} outlier(s)')
+    evaluate_model(LinearRegression(),
+        train_features.iloc[inlier_indices], train_labels.iloc[inlier_indices],
+        test_features, test_labels,
+        feature_subset=SIGNIFICANT_RIDGE_COLUMNS)
 
 
 if __name__ == '__main__':
