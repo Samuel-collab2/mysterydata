@@ -1,66 +1,58 @@
 from os.path import join
 
-import numpy as np
 import pandas as pd
 from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-from core.preprocessing import separate_features_label, create_augmented_features, \
-    convert_label_boolean
+from core.preprocessing import separate_features_label, create_augmented_features
 from core.constants import OUTPUT_DIR, DATASET_LABEL_NAME
 from core.constants_feature_set import SIGNIFICANT_AUGMENTED_INDUCTION_COLUMNS
 
 
-def main(dataset):
-    features, labels = separate_features_label(dataset, DATASET_LABEL_NAME)
-    features_augmented = create_augmented_features(features, SIGNIFICANT_AUGMENTED_INDUCTION_COLUMNS)
-    labels_boolean = convert_label_boolean(labels)
-
-    pca = PCA(n_components=2, random_state=0)
-    pca_points = pca.fit_transform(features_augmented)
-
+def plot_heatmap(features, num_bins, fig_name):
     fig, ax = plt.subplots(1, 2)
 
-    NUM_BINS = 7
-    pca_features = pd.DataFrame(pca_points)
+    pca_features = pd.DataFrame(features)
     heatmap_features = pca_features.groupby([
-        pd.cut(pca_features[1], NUM_BINS),
-        pd.cut(pca_features[0], NUM_BINS),
+        pd.cut(pca_features[1], num_bins),
+        pd.cut(pca_features[0], num_bins),
     ]).mean().unstack()
-    heatmap_boundaries = (
-        heatmap_features.min().min(),
-        heatmap_features.max().max()
-    )
+    heatmap_min = heatmap_features.min().min()
+    heatmap_max = heatmap_features.max().max()
 
-    sns.heatmap(heatmap_features[0],
-        ax=ax[0],
-        vmin=heatmap_boundaries[0],
-        vmax=heatmap_boundaries[1],
-        cmap='Blues',
-        square=True)
+    def subplot_heatmap(features, ax):
+        sns.heatmap(features,
+            ax=ax,
+            vmin=heatmap_min,
+            vmax=heatmap_max,
+            cmap='Blues',
+            square=True)
+        ax.set_xlabel('x')
+        ax.set_ylabel('y')
+        ax.invert_yaxis()
+
+    subplot_heatmap(heatmap_features[0], ax[0])
     ax[0].set_title('PCA for augmented features for rejected claims')
-    ax[0].set_xlabel('x')
-    ax[0].set_ylabel('y')
-    ax[0].legend()
-    ax[0].invert_yaxis()
 
-    sns.heatmap(heatmap_features[1],
-        ax=ax[1],
-        vmin=heatmap_boundaries[0],
-        vmax=heatmap_boundaries[1],
-        cmap='Blues',
-        square=True)
+    subplot_heatmap(heatmap_features[1], ax[1])
     ax[1].set_title('PCA for augmented features for accepted claims')
-    ax[1].set_xlabel('x')
-    ax[1].set_ylabel('y')
-    ax[1].legend()
-    ax[1].invert_yaxis()
 
-    fig_path = join(OUTPUT_DIR, 'heatmap_augmented_pca.png')
+    fig_path = join(OUTPUT_DIR, fig_name)
     fig.set_figwidth(16)
     fig.savefig(fig_path, bbox_inches='tight')
     print(f'Wrote plot to {fig_path}')
+
+
+def main(dataset):
+    features, _ = separate_features_label(dataset, DATASET_LABEL_NAME)
+    features_augmented = create_augmented_features(features, SIGNIFICANT_AUGMENTED_INDUCTION_COLUMNS)
+
+    pca = PCA(n_components=2, random_state=0)
+    pca_points = pca.fit_transform(features_augmented)
+    plot_heatmap(pca_points,
+        num_bins=7,
+        fig_name='heatmap_augmented_pca.png')
 
 
 if __name__ == '__main__':
