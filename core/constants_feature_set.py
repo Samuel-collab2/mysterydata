@@ -45,7 +45,7 @@ SIGNIFICANT_RIDGE_COLUMNS = [
     'feature3_8',
     'feature15_6',
     'feature10',
-    'feature14_3',
+    # 'feature14_3',
     'feature14_1',
     'feature3_1',
     'feature15_5',
@@ -133,15 +133,12 @@ SIGNIFICANT_AUGMENTED_INDUCTION_COLUMNS = [
     'feature3/feature5',
 ]
 
-SIGNIFICANT_AUGMENTED_REGRESSION_COLUMNS = [
+SIGNIFICANT_AUGMENTED_POSITIVE_REGRESSION_COLUMNS = [
     'feature15/feature16',
-    'feature10/feature16',
     'feature2/feature16',
-    'feature2/feature3',
     'feature12/feature18',
     'feature4/feature16',
     'feature8/feature16',
-    'feature9/feature16',
     'feature15/feature18',
     'feature14/feature16',
     'feature2/feature7',
@@ -150,11 +147,22 @@ SIGNIFICANT_AUGMENTED_REGRESSION_COLUMNS = [
     'feature15',
     'feature12/feature16',
     'feature12/feature14',
-    'feature17/feature18',
     'feature13/feature16',
-    'feature5/feature16',
     'feature12',
     'feature2/feature13',
     'feature2*feature15',
+]
+
+SIGNIFICANT_AUGMENTED_NEGATIVE_REGRESSION_COLUMNS = [
+    'feature10/feature16',
+    'feature2/feature3',
+    'feature9/feature16',
+    'feature17/feature18',
+    'feature5/feature16',
     'feature10/feature13',
 ]
+
+SIGNIFICANT_AUGMENTED_REGRESSION_COLUMNS = (
+    SIGNIFICANT_AUGMENTED_POSITIVE_REGRESSION_COLUMNS
+    + SIGNIFICANT_AUGMENTED_NEGATIVE_REGRESSION_COLUMNS
+)
