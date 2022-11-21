@@ -96,6 +96,49 @@ def get_model_set_data(train_dataset, test_features):
         (accept_train_features, accept_train_label, processed_test_features, processed_train_features), \
         raw_train_label
 
+def get_model_set_train_data(train_dataset):
+    """
+    Preprocesses training data.
+    :param: a data frame containing the training data
+    :return: (
+        (induction_features, induction_labels, _, _),
+        (regression_features, regression_labels, _, _),
+    )
+    """
+    train_features, train_labels = separate_features_label(train_dataset, DATASET_LABEL_NAME)
+
+    categorical_columns = get_categorical_columns(train_dataset)
+    categorical_train_features = train_features.loc[:, categorical_columns]
+    expanded_train_features = expand_dataset_deterministic(
+        train_features,
+        load_determining_dataset(),
+        categorical_columns
+    )
+    augmented_train_features = create_augmented_features(
+        train_features,
+        SIGNIFICANT_AUGMENTED_COLUMNS
+    )
+
+    induction_train_features = pd.concat((
+        expanded_train_features,
+        augmented_train_features,
+        categorical_train_features,
+    ), axis='columns')
+    induction_train_columns = induction_train_features.columns
+
+    induction_train_labels = convert_label_boolean(train_labels)
+    induction_data = (induction_train_features, induction_train_labels,
+        pd.DataFrame(columns=induction_train_columns),
+        pd.DataFrame(columns=induction_train_columns))
+
+    accept_data, _ = split_claims_accept_reject(induction_train_features, train_labels)
+    accept_train_features, accept_train_label = accept_data
+    regression_data = (accept_train_features, accept_train_label,
+        pd.DataFrame(columns=induction_train_columns),
+        pd.DataFrame(columns=induction_train_columns))
+
+    return induction_data, regression_data
+
 def enumerate_model_set_predictions(train_dataset, test_dataset, model_sets):
     """
     Output predictions and training MAE for the given model sets.
