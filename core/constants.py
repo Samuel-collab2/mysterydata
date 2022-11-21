@@ -1,3 +1,4 @@
+from os.path import join
 import numpy as np
 
 DATASET_TRAIN_PATH = 'trainingset.csv'
@@ -5,6 +6,7 @@ DATASET_TEST_PATH = 'testset.csv'
 DATASET_LABEL_NAME = 'ClaimAmount'
 DATASET_INDEX_NAME = 'rowIndex'
 OUTPUT_DIR = 'dist'
+MODEL_PATH = join(OUTPUT_DIR, 'model.sav')
 
 DATASET_TRAIN_RATIO = 0.8
 MIN_REAL_FEATURE_UNIQUE_VALUES = 20

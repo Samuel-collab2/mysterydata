@@ -119,39 +119,63 @@ def enumerate_model_set_predictions(train_dataset, test_dataset, model_sets):
     submission_data = get_model_set_data(train_dataset, test_dataset)
 
     for index, model_set in enumerate(model_sets):
-        print(f'Predicting: {model_set.name}...')
-
-        induction_data, regression_data, evaluation_label = submission_data
-        for induction_modifier in model_set.induction_modifiers:
-            induction_data = induction_modifier(*induction_data)
-
-        for regression_modifier in model_set.regression_modifiers:
-            regression_data = regression_modifier(*regression_data)
-
-        induction_train_features, induction_train_label, \
-            induction_test_features, induction_evaluation_features = induction_data
-
-        regression_train_features, regression_train_label, \
-            regression_test_features, regression_evaluation_features = regression_data
-
-        model = train_composite(
-            induction_train_features,
-            induction_train_label,
-            regression_train_features,
-            regression_train_label,
-            model_set.train_induction_model,
-            model_set.train_regression_model,
-            proba_threshold=model_set.proba_threshold,
-        )
-
-        evaluation_predictions = model.predict(
-            induction_evaluation_features,
-            regression_evaluation_features
-        )
-
-        test_predictions = model.predict(
-            induction_test_features,
-            regression_test_features,
-        )
-
+        evaluation_predictions, evaluation_label, test_predictions = get_model_set_predictions(model_set, submission_data)
         yield index, evaluation_predictions, evaluation_label, test_predictions
+
+def modify_model_set_train_data(model_set, induction_data, regression_data):
+    for induction_modifier in model_set.induction_modifiers:
+        induction_data = induction_modifier(*induction_data)
+
+    for regression_modifier in model_set.regression_modifiers:
+        regression_data = regression_modifier(*regression_data)
+
+    return induction_data, regression_data
+
+def train_model_from_model_set(model_set, induction_data, regression_data):
+    induction_data, regression_data = modify_model_set_train_data(
+        model_set,
+        induction_data,
+        regression_data,
+    )
+
+    induction_train_features, induction_train_label, _, _ = induction_data
+    regression_train_features, regression_train_label, _, _ = regression_data
+
+    model = train_composite(
+        induction_train_features,
+        induction_train_label,
+        regression_train_features,
+        regression_train_label,
+        model_set.train_induction_model,
+        model_set.train_regression_model,
+        proba_threshold=model_set.proba_threshold,
+    )
+
+    return model
+
+def get_model_set_predictions(model_set, submission_data):
+    print(f'Predicting: {model_set.name}...')
+
+    induction_data, regression_data, evaluation_label = submission_data
+    model = train_model_from_model_set(model_set, induction_data, regression_data)
+
+    induction_data, regression_data = modify_model_set_train_data(
+        model_set,
+        induction_data,
+        regression_data,
+    )
+
+    _, _, induction_test_features, induction_evaluation_features = induction_data
+    _, _, regression_test_features, regression_evaluation_features = regression_data
+
+    evaluation_predictions = model.predict(
+        induction_evaluation_features,
+        regression_evaluation_features
+    )
+
+    test_predictions = model.predict(
+        induction_test_features,
+        regression_test_features,
+    )
+
+    return evaluation_predictions, evaluation_label, test_predictions
