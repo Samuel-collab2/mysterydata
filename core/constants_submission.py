@@ -1,13 +1,17 @@
 from sklearn.ensemble import RandomForestClassifier
+from imblearn.under_sampling import TomekLinks
+from imblearn.combine import SMOTETomek
 
 from core.constants_feature_set import SIGNIFICANT_RIDGE_COLUMNS, SIGNIFICANT_BINARY_LABEL_COLUMNS, \
     SIGNIFICANT_FORWARD_STEPWISE_COLUMNS, SIGNIFICANT_AUGMENTED_COLUMNS
 from core.model_induction import train_random_forest, train_decision_tree
+from core.model_induction_boundary import train_boundary_1, train_boundary_2
 from core.model_induction_nn import train_network_classifier
 from core.model_induction_wrapper import train_wrapped_induction, predicate_accept_brandon, predicate_reject_brandon
 from core.model_regression import train_static_regression, train_linear_regression, train_polynomial_regression
 from core.model_set import ModelSet
-from core.model_set_modifiers import modifier_filter_columns, modify_model, modifier_balance_binary_data
+from core.model_set_modifiers import modifier_filter_columns, modify_model, \
+    modifier_balance_binary_data
 
 SUBMISSION1_RIDGE_FEATURE_SET_COUNTS = [1, 3, 7, 5, 10]
 SUBMISSION1_PROPAGATION_FEATURE_SET_COUNTS = [3, 5, 10, 15, 20]
@@ -213,5 +217,133 @@ SUBMISSION3_MODEL_SETS = [
         regression_modifiers=[
             modifier_filter_columns(SIGNIFICANT_RIDGE_COLUMNS[:3]),
         ]
+    ),
+]
+
+SUBMISSION4_MODEL_SETS = [
+    ModelSet(
+        name='\"Golden Child\" (balanced class weights, no bootstrapping)',
+        train_induction_model=modify_model(
+            train_wrapped_induction,
+            model=RandomForestClassifier(
+                n_estimators=50,
+                class_weight='balanced',
+                bootstrap=False
+            ),
+            predicate_accept=predicate_accept_brandon,
+            predicate_reject=predicate_reject_brandon,
+        ),
+        induction_modifiers=[
+            modifier_filter_columns(SIGNIFICANT_AUGMENTED_COLUMNS),
+        ],
+        train_regression_model=train_static_regression,
+    ),
+    ModelSet(
+        name='Balanced class weights, all ridge features, degree 2, skeptical regression',
+        train_induction_model=modify_model(
+            train_wrapped_induction,
+            model=RandomForestClassifier(n_estimators=50, class_weight='balanced'),
+            predicate_accept=predicate_accept_brandon,
+            predicate_reject=predicate_reject_brandon,
+        ),
+        induction_modifiers=[
+            modifier_filter_columns(SIGNIFICANT_AUGMENTED_COLUMNS),
+        ],
+        train_regression_model=modify_model(train_polynomial_regression, degree=2),
+        regression_modifiers=[
+            modifier_filter_columns(SIGNIFICANT_RIDGE_COLUMNS),
+        ],
+        proba_threshold=1,
+    ),
+    ModelSet(
+        name='Balanced class weights, no bootstrapping, Tomek links removed',
+        train_induction_model=modify_model(
+            train_wrapped_induction,
+            model=RandomForestClassifier(
+                n_estimators=50,
+                class_weight='balanced',
+                bootstrap=False
+            ),
+            predicate_accept=predicate_accept_brandon,
+            predicate_reject=predicate_reject_brandon,
+        ),
+        induction_modifiers=[
+            modifier_filter_columns(SIGNIFICANT_AUGMENTED_COLUMNS),
+            modifier_resample(TomekLinks()),
+        ],
+        train_regression_model=train_static_regression,
+    ),
+    ModelSet(
+        name='Balanced class weights, no bootstrapping, Tomek links removed, SMOTE oversampling',
+        train_induction_model=modify_model(
+            train_wrapped_induction,
+            model=RandomForestClassifier(
+                n_estimators=50,
+                class_weight='balanced',
+                bootstrap=False
+            ),
+            predicate_accept=predicate_accept_brandon,
+            predicate_reject=predicate_reject_brandon,
+        ),
+        induction_modifiers=[
+            modifier_filter_columns(SIGNIFICANT_AUGMENTED_COLUMNS),
+            modifier_resample(SMOTETomek()),
+        ],
+        train_regression_model=train_static_regression,
+    ),
+    ModelSet(
+        name='Submission 3 winner, balanced class weights, all ridge features, degree 2',
+        train_induction_model=modify_model(
+            train_wrapped_induction,
+            model=RandomForestClassifier(n_estimators=50, class_weight='balanced'),
+            predicate_accept=predicate_accept_brandon,
+            predicate_reject=predicate_reject_brandon,
+        ),
+        induction_modifiers=[
+            modifier_filter_columns(SIGNIFICANT_AUGMENTED_COLUMNS),
+            modifier_balance_binary_data(skew_false=6),
+        ],
+        train_regression_model=modify_model(train_polynomial_regression, degree=2),
+        regression_modifiers=[
+            modifier_filter_columns(SIGNIFICANT_RIDGE_COLUMNS),
+        ]
+    ),
+    ModelSet(
+        name='Boundary rejection 1',
+        train_induction_model=modify_model(
+            train_boundary_1,
+            model=RandomForestClassifier(
+                n_estimators=50,
+                class_weight='balanced',
+                bootstrap=False
+            ),
+            model_columns=SIGNIFICANT_AUGMENTED_COLUMNS
+        ),
+        induction_modifiers=[],
+        train_regression_model=train_static_regression,
+    ),
+    ModelSet(
+        name='Boundary rejection 2',
+        train_induction_model=modify_model(
+            train_boundary_2,
+            model=RandomForestClassifier(
+                n_estimators=50,
+                class_weight='balanced',
+                bootstrap=False
+            ),
+            model_columns=SIGNIFICANT_AUGMENTED_COLUMNS
+        ),
+        induction_modifiers=[],
+        train_regression_model=train_static_regression,
+    ),
+    # Leave SVC models last, they take a bit
+    ModelSet(
+        name='SVC static',
+        train_induction_model=modify_model(train_svc, penalty=50),
+        induction_modifiers=[
+            modifier_filter_columns(SIGNIFICANT_BINARY_LABEL_COLUMNS),
+            modifier_balance_binary_data(skew_false=12),
+        ],
+        train_regression_model=train_static_regression,
     ),
 ]

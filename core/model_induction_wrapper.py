@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 from core.model_base import BaseModel
 
 
@@ -13,7 +14,8 @@ class ModelInductionWrapper(BaseModel):
 
     def __init__(self, model,
                  predicate_accept=_null_predicate,
-                 predicate_reject=_null_predicate):
+                 predicate_reject=_null_predicate,
+                 model_columns=None):
         """
         Initializes a binary classification model wrapper.
         :param model: the model to wrap
@@ -25,6 +27,10 @@ class ModelInductionWrapper(BaseModel):
         self._model = model
         self._predicate_accept = predicate_accept
         self._predicate_reject = predicate_reject
+        self._model_columns = model_columns
+
+    def get_model_columns(self, features):
+        return features.columns if self._model_columns is None else self._model_columns
 
     def _handle_predicate(self, predicate, row):
         # enables accessing nonexistent features in an entry
@@ -35,9 +41,14 @@ class ModelInductionWrapper(BaseModel):
             return False
 
     def fit(self, train_features, train_labels):
-        return self._model.fit(train_features, train_labels)
+        return self._model.fit(train_features.loc[:, self.get_model_columns(train_features)], train_labels)
 
     def predict(self, test_features):
+        return self._model.predict_proba(test_features)[:, 1] > 0.5
+
+    def predict_proba(self, test_features):
+        test_columns = self.get_model_columns(test_features)
+
         pred_features = test_features.copy()
         pred_accepts, pred_rejects = zip(*((
             self._handle_predicate(self._predicate_accept, row),
@@ -59,17 +70,20 @@ class ModelInductionWrapper(BaseModel):
             & (pred_features['reject'] == False)
         ].copy()
 
-        pred_labels = (self._model.predict(rows_unsure.loc[:, test_features.columns])
+        pred_proba = (self._model.predict_proba(rows_unsure.loc[:, test_columns])[:, 1]
             if not rows_unsure.empty
             else [])
 
-        rows_reject['label'] = False
-        rows_accept['label'] = True
-        rows_unsure['label'] = pred_labels
+        rows_reject['label'] = 0
+        rows_accept['label'] = 1
+        rows_unsure['label'] = pred_proba
 
         pred_rows = pd.concat((rows_reject, rows_accept, rows_unsure))
         pred_rows.sort_values(by='index')
-        return pred_rows.loc[:, 'label']
+        return np.array([
+            [0] * len(pred_rows),  # HACK: should be inverse of label values (usually unused)
+            pred_rows.loc[:, 'label'].values,
+        ]).T
 
     def score(self, test_features, test_labels):
         return self._model.score(test_features, test_labels)
