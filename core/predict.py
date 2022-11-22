@@ -15,7 +15,7 @@ from core.model_set_modifiers import modifier_filter_columns
 def _get_submission_dataset():
     return load_test_dataset()
 
-def _output_predictions(predictions, filename):
+def output_predictions(predictions, filename):
     """
     Outputs the predictions for a trained composite model from the test samples.
     :param predictions: The predictions
@@ -61,7 +61,7 @@ def _predict_model_sets(train_dataset, prefix, model_sets):
 
         print(f'Training MAE: {training_mae}')
 
-        _output_predictions(
+        output_predictions(
             test_predictions,
             f'{prefix}_set{index}',
         )
