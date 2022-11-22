@@ -3,6 +3,7 @@ import numpy as np
 
 DATASET_TRAIN_PATH = 'trainingset.csv'
 DATASET_TEST_PATH = 'testset.csv'
+DATASET_COMPETITION_PATH = 'competitionset.csv'
 DATASET_LABEL_NAME = 'ClaimAmount'
 DATASET_INDEX_NAME = 'rowIndex'
 OUTPUT_DIR = 'dist'
