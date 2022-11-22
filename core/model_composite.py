@@ -14,6 +14,10 @@ class CompositeModel:
         self._induction_model = self._train_induction_model(induction_train_features, induction_train_label)
         self._regression_model = self._train_regression_model(regression_train_features, regression_train_label)
 
+        # HACK: unset lambdas for pickling
+        self._train_induction_model = None
+        self._train_regression_model = None
+
     def predict(self, induction_test_features, regression_test_features):
         induction_proba = self._induction_model.predict_proba(induction_test_features)[:, 1]
         return [

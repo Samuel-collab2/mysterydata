@@ -8,12 +8,12 @@ from core.data_analysis import perform_linear_regression_analysis, perform_polyn
 from core.data_visualization import generate_classification_plots, \
     generate_scatter_plots, generate_histogram_plots, generate_compound_plots, generate_correlation_plots
 from core.loader import load_train_dataset, load_standardized_train_dataset, load_determining_dataset
+from core.model_exporter import handle_model_export
 from core.predict import predict_submission1_ridge, predict_submission1_propagation, predict_submission2, \
     predict_submission3, predict_submission4
 from core.preprocessing import split_training_test, split_claims_accept_reject, \
     separate_features_label, convert_label_binary, get_categorical_columns, expand_dataset_deterministic
 from library.option_input import OptionInput
-from main_induction import perform_induction_tests
 
 
 def run_menu(title, options):
@@ -136,22 +136,15 @@ def main():
 
     def main_menu():
         run_menu('Main menu', [
-            (
-                'Run dev test',
-                run_dev_test
-            ),
-            (
-                'Generate data visualization plots',
-                lambda: data_selection_menu('Select visualization data', visualization_menu)
-            ),
-            (
-                'Perform data analysis',
-                lambda: data_selection_menu('Select analysis data', analysis_menu)
-            ),
-            (
-                'Run model prediction',
-                prediction_menu
-            ),
+            ('Run dev test', run_dev_test),
+            ('Generate data visualization plots', lambda: (
+                data_selection_menu('Select visualization data', visualization_menu)
+            )),
+            ('Perform data analysis', lambda: (
+                data_selection_menu('Select analysis data', analysis_menu)
+            )),
+            ('Run model prediction', prediction_menu),
+            ('Export competition model', handle_model_export),
             MENU_EXIT
         ])
 

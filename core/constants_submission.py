@@ -347,3 +347,26 @@ SUBMISSION4_MODEL_SETS = [
         train_regression_model=train_static_regression,
     ),
 ]
+
+COMPETITION_MODEL_SET = ModelSet(
+    name='Balanced class weights, no bootstrapping, Tomek links removed',
+    train_induction_model=modify_model(
+        train_wrapped_induction,
+        model=RandomForestClassifier(
+            n_estimators=50,
+            class_weight='balanced',
+            bootstrap=False
+        ),
+        predicate_accept=predicate_accept_brandon,
+        predicate_reject=predicate_reject_brandon,
+    ),
+    induction_modifiers=[
+        modifier_filter_columns(SIGNIFICANT_AUGMENTED_COLUMNS),
+        modifier_resample(TomekLinks()),
+    ],
+    train_regression_model=modify_model(train_polynomial_regression, degree=2),
+    regression_modifiers=[
+        modifier_filter_columns(SIGNIFICANT_RIDGE_COLUMNS),
+    ],
+    proba_threshold=1,
+)
