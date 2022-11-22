@@ -56,7 +56,7 @@ def get_model_set_data(train_dataset, test_features):
     combined_dataset = pd.concat([raw_train_dataset, raw_test_features], axis=0)
     combined_expanded_dataset = expand_dataset_deterministic(
         combined_dataset,
-        load_determining_dataset(),
+        train_dataset,
         categorical_columns
     )
 
